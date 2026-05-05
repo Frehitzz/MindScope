@@ -1,0 +1,174 @@
+{
+  "source_csv": "C:\\Mycodes\\MindScope\\dataset\\Teen_Mental_Health_Dataset.csv",
+  "cleaned_csv": "C:\\Mycodes\\MindScope\\dataset\\Teen_Mental_Health_Dataset.cleaned.csv",
+  "cloud_destination_table": "teen_mental_health_cleaned",
+  "missing_value_strategy": [
+    {
+      "column": "age",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "gender",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "daily_social_media_hours",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "platform_usage",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "sleep_hours",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "screen_time_before_sleep",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "academic_performance",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "physical_activity",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "social_interaction_level",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "stress_level",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "anxiety_level",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "addiction_level",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    },
+    {
+      "column": "depression_label",
+      "missing_count": 0,
+      "strategy": "no_action_needed",
+      "fill_value": null
+    }
+  ],
+  "normalization": {
+    "method": "min_max_scaling",
+    "source_column": "daily_social_media_hours",
+    "output_column": "daily_social_media_hours_min_max",
+    "minimum": 1.0,
+    "maximum": 8.0
+  },
+  "outlier_filtering": {
+    "method": "iqr",
+    "checked_columns": [
+      "age",
+      "daily_social_media_hours",
+      "sleep_hours",
+      "screen_time_before_sleep",
+      "academic_performance",
+      "physical_activity",
+      "stress_level",
+      "anxiety_level",
+      "addiction_level"
+    ],
+    "rows_removed": 0,
+    "rows_remaining": 1000,
+    "bounds": {
+      "age": {
+        "q1": 14.0,
+        "q3": 18.0,
+        "iqr": 4.0,
+        "lower_bound": 8.0,
+        "upper_bound": 24.0
+      },
+      "daily_social_media_hours": {
+        "q1": 2.7,
+        "q3": 6.225,
+        "iqr": 3.5249999999999995,
+        "lower_bound": -2.5874999999999995,
+        "upper_bound": 11.5125
+      },
+      "sleep_hours": {
+        "q1": 5.2,
+        "q3": 7.7,
+        "iqr": 2.5,
+        "lower_bound": 1.4500000000000002,
+        "upper_bound": 11.45
+      },
+      "screen_time_before_sleep": {
+        "q1": 1.1,
+        "q3": 2.4,
+        "iqr": 1.2999999999999998,
+        "lower_bound": -0.8499999999999996,
+        "upper_bound": 4.35
+      },
+      "academic_performance": {
+        "q1": 2.51,
+        "q3": 3.48,
+        "iqr": 0.9700000000000002,
+        "lower_bound": 1.0549999999999995,
+        "upper_bound": 4.9350000000000005
+      },
+      "physical_activity": {
+        "q1": 0.5,
+        "q3": 1.5,
+        "iqr": 1.0,
+        "lower_bound": -1.0,
+        "upper_bound": 3.0
+      },
+      "stress_level": {
+        "q1": 3.0,
+        "q3": 8.0,
+        "iqr": 5.0,
+        "lower_bound": -4.5,
+        "upper_bound": 15.5
+      },
+      "anxiety_level": {
+        "q1": 3.0,
+        "q3": 8.0,
+        "iqr": 5.0,
+        "lower_bound": -4.5,
+        "upper_bound": 15.5
+      },
+      "addiction_level": {
+        "q1": 3.0,
+        "q3": 8.0,
+        "iqr": 5.0,
+        "lower_bound": -4.5,
+        "upper_bound": 15.5
+      }
+    }
+  },
+  "final_row_count": 1000
+}

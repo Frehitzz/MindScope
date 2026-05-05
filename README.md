@@ -1,73 +1,101 @@
-# React + TypeScript + Vite
+# MindScope Dataset Setup
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project uses a teen mental health dataset for a school project. The dataset should be treated as an educational/demo dataset, not as medical or clinical evidence.
 
-Currently, two official plugins are available:
+## Dataset Files
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- CSV source: `dataset/Teen_Mental_Health_Dataset.csv`
+- Upload script: `dataset/upload_to_supabase.py`
+- Table SQL: `docs/creating-table.md`
 
-## React Compiler
+## What The Dataset Contains
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The CSV has 1000 rows and these columns:
 
-## Expanding the ESLint configuration
+- `age`
+- `gender`
+- `daily_social_media_hours`
+- `platform_usage`
+- `sleep_hours`
+- `screen_time_before_sleep`
+- `academic_performance`
+- `physical_activity`
+- `social_interaction_level`
+- `stress_level`
+- `anxiety_level`
+- `addiction_level`
+- `depression_label`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 1. Create The Database Table
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Create a table in Supabase using the SQL in [docs/creating-table.md](/abs/path/C:/Mycodes/MindScope/docs/creating-table.md:1).
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Current table name:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```sql
+teen_mental_health
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 2. Install Python Requirements
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The upload script depends on:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```txt
+pandas
+requests
+python-dotenv
 ```
+
+Install them with:
+
+```powershell
+pip install pandas requests python-dotenv
+```
+
+## 3. Configure Environment Variables
+
+Create a `.env` file in the project root or in the `dataset` folder with:
+
+```env
+SUPABASE_URL=your-supabase-project-url
+SUPABASE_KEY=your-supabase-service-role-or-api-key
+```
+
+The script reads:
+
+- `SUPABASE_URL`
+- `SUPABASE_KEY`
+
+## 4. Upload The Dataset
+
+Run the uploader from the project root:
+
+```powershell
+python dataset/upload_to_supabase.py
+```
+
+The script will:
+
+- read `dataset/Teen_Mental_Health_Dataset.csv`
+- convert rows to JSON records
+- insert data into Supabase in chunks of 200
+
+## 5. Verify The Upload
+
+After the script finishes:
+
+1. Open your Supabase dashboard.
+2. Go to the `teen_mental_health` table.
+3. Confirm the row count matches the CSV.
+
+Expected row count:
+
+```txt
+1000
+```
+
+## Notes
+
+- This dataset is for school-project use.
+- Do not describe it as a real diagnostic or clinical dataset unless you have a verified source.
+- If you rerun the upload script against the same table, it may insert duplicate logical rows unless you clear the table first.
