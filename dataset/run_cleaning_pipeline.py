@@ -9,6 +9,7 @@ from upload_to_supabase import upload_dataframe_to_supabase
 
 
 def build_run_summary(settings: dict[str, object], cleaning_result) -> dict[str, object]:
+    # create a dictionary summarizing the cleaning process
     return {
         "source_csv": str(settings["csv_path"]),
         "cleaned_csv": str(settings["cleaned_csv_path"]),
@@ -21,6 +22,7 @@ def build_run_summary(settings: dict[str, object], cleaning_result) -> dict[str,
 
 
 def write_run_summary(summary: dict[str, object], output_path: Path) -> None:
+    # save the summary dictionary to a json file
     output_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
 

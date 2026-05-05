@@ -15,23 +15,30 @@ def upload_dataframe_to_supabase(
     table_name: str,
     chunk_size: int = 200,
 ) -> None:
+    # convert dataframe to a list of dictionaries handling null values
     records = df.where(pd.notnull(df), None).to_dict(orient="records")
     total_records = len(records)
     total_chunks = math.ceil(total_records / chunk_size) if total_records else 0
 
+    # setup the headers for the api request
     headers = {
         "apikey": supabase_key,
         "Authorization": f"Bearer {supabase_key}",
         "Content-Type": "application/json",
         "Prefer": "return=minimal",
     }
+    
+    # build the destination url
     endpoint_url = f"{supabase_url.rstrip('/')}/rest/v1/{table_name}"
 
+    # loop through the data and upload in chunks
     for index in range(0, total_records, chunk_size):
         chunk = records[index:index + chunk_size]
         current_chunk = (index // chunk_size) + 1
         print(f"Uploading chunk {current_chunk}/{total_chunks} ({len(chunk)} records)...")
         response = requests.post(endpoint_url, headers=headers, json=chunk, timeout=30)
+        
+        # stop the script and show error if upload fails
         try:
             response.raise_for_status()
         except HTTPError as exc:

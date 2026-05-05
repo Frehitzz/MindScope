@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 
+# list of columns to check for outliers
 CONTINUOUS_COLUMNS = [
     "age",
     "daily_social_media_hours",
@@ -34,9 +35,11 @@ def load_dataset(csv_path: str) -> pd.DataFrame:
 
 
 def handle_missing_values(df: pd.DataFrame) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+    # copy the dataframe to avoid changing the original
     cleaned_df = df.copy()
     summary: list[dict[str, object]] = []
 
+    # check every column for missing data
     for column in cleaned_df.columns:
         missing_count = int(cleaned_df[column].isna().sum())
         flag_column = f"{column}_was_missing"
@@ -68,6 +71,7 @@ def handle_missing_values(df: pd.DataFrame) -> tuple[pd.DataFrame, list[dict[str
 
 
 def normalize_column_min_max(df: pd.DataFrame, column: str, output_column: str) -> tuple[pd.DataFrame, dict[str, object]]:
+    # calculate minimum and maximum for scaling
     cleaned_df = df.copy()
     minimum = float(cleaned_df[column].min())
     maximum = float(cleaned_df[column].max())
@@ -88,9 +92,11 @@ def normalize_column_min_max(df: pd.DataFrame, column: str, output_column: str) 
 
 
 def filter_outliers_iqr(df: pd.DataFrame, columns: list[str]) -> tuple[pd.DataFrame, dict[str, object]]:
+    # prepare variables to track outliers
     mask = pd.Series(False, index=df.index)
     bounds: dict[str, dict[str, float]] = {}
 
+    # calculate interquartile range for each column
     for column in columns:
         q1 = float(df[column].quantile(0.25))
         q3 = float(df[column].quantile(0.75))
@@ -118,6 +124,7 @@ def filter_outliers_iqr(df: pd.DataFrame, columns: list[str]) -> tuple[pd.DataFr
 
 
 def clean_dataset(df: pd.DataFrame) -> CleaningResult:
+    # run all cleaning steps in order
     missing_handled_df, missing_value_summary = handle_missing_values(df)
     normalized_df, normalization_summary = normalize_column_min_max(
         missing_handled_df,

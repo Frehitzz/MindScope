@@ -6,15 +6,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
+# set up base directory and file paths
 BASE_DIR = Path(__file__).resolve().parent
 CSV_PATH = BASE_DIR / "Teen_Mental_Health_Dataset.csv"
 CLEANED_CSV_PATH = BASE_DIR / "Teen_Mental_Health_Dataset.cleaned.csv"
 
 
 def load_settings() -> dict[str, object]:
+    # load environment variables from env file
     load_dotenv(BASE_DIR / ".env")
     load_dotenv()
 
+    # return a dictionary with all configuration settings
     return {
         "csv_path": CSV_PATH,
         "cleaned_csv_path": CLEANED_CSV_PATH,
