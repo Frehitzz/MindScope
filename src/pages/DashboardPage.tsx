@@ -11,7 +11,7 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import { Bar, Line, Doughnut } from 'react-chartjs-2';
+import { Bar, Line, Scatter } from 'react-chartjs-2';
 import { Activity, HeartPulse, Moon, Smartphone, Sparkles, HeartHandshake, TrendingUp } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
@@ -20,23 +20,50 @@ import { StatCard } from '../components/StatCard';
 import { SectionHeader } from '../components/SectionHeader';
 import { ChartCard } from '../components/ChartCard';
 import { CHART_COLORS } from '../constants/chartColors';
-import {
-  moodTrendData,
-  stressTriggers,
-  wellbeingBreakdown,
-} from '../data/mockData';
+
+const lollipopStemPlugin = {
+  id: 'lollipopStemPlugin',
+  afterDatasetsDraw(chart: any) {
+    const pluginOptions = chart?.options?.plugins?.lollipopStemPlugin;
+    if (!pluginOptions?.enabled) return;
+
+    const datasetMeta = chart.getDatasetMeta(0);
+    const yScale = chart.scales.y;
+    if (!datasetMeta?.data?.length || !yScale) return;
+
+    const ctx = chart.ctx;
+    const baselinePixel = yScale.getPixelForValue(pluginOptions.baselineValue ?? 0);
+
+    ctx.save();
+    ctx.strokeStyle = pluginOptions.stemColor ?? CHART_COLORS.mid1;
+    ctx.lineWidth = pluginOptions.stemWidth ?? 3;
+    ctx.lineCap = 'round';
+
+    datasetMeta.data.forEach((point: any) => {
+      ctx.beginPath();
+      ctx.moveTo(point.x, baselinePixel);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+    });
+
+    ctx.restore();
+  },
+};
 
 // Register Chart.js modules
 ChartJS.register(
   CategoryScale, LinearScale, BarElement,
   PointElement, LineElement, ArcElement,
-  Tooltip, Legend, Filler,
+  Tooltip, Legend, Filler, lollipopStemPlugin,
 );
 
 const statIcons = [Activity, HeartPulse, Moon, Smartphone];
 
 export function DashboardPage() {
   const [stats, setStats] = useState<any[]>([]);
+  const [platformData, setPlatformData] = useState<{ labels: string[], addiction: number[], max: number[], min: number[] }>({ labels: [], addiction: [], max: [], min: [] });
+  const [interactionData, setInteractionData] = useState<{ labels: string[], values: number[] }>({ labels: [], values: [] });
+  const [scatterData, setScatterData] = useState<{ x: number, y: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +71,7 @@ export function DashboardPage() {
       try {
         const { data, error } = await supabase
           .from('teen_mental_health_cleaned')
-          .select('stress_level, anxiety_level, sleep_hours, daily_social_media_hours');
+          .select('stress_level, anxiety_level, sleep_hours, daily_social_media_hours, platform_usage, addiction_level, social_interaction_level, depression_label');
 
         if (error) throw error;
 
@@ -67,6 +94,61 @@ export function DashboardPage() {
             { label: 'Avg Sleep Hours', value: (sumSleep / totalRows).toFixed(1) + 'h', delta: `Range: ${minSleep}h - ${maxSleep}h`, deltaPositive: true },
             { label: 'Daily Social Media', value: (sumSocial / totalRows).toFixed(1) + 'h', delta: `Max: ${maxSocial}h/day`, deltaPositive: true },
           ]);
+
+          // Calculate averages grouped by platform for the bar chart
+          const groupedByPlatform = data.reduce((acc, row) => {
+            const platformStr = row.platform_usage ? String(row.platform_usage).trim() : 'Unknown';
+            const formattedPlatform = platformStr.charAt(0).toUpperCase() + platformStr.slice(1).toLowerCase();
+
+            const addiction = row.addiction_level || 0;
+            if (!acc[formattedPlatform]) acc[formattedPlatform] = { count: 0, sumAddiction: 0, max: -Infinity, min: Infinity };
+            acc[formattedPlatform].count++;
+            acc[formattedPlatform].sumAddiction += addiction;
+            if (addiction > acc[formattedPlatform].max) acc[formattedPlatform].max = addiction;
+            if (addiction < acc[formattedPlatform].min) acc[formattedPlatform].min = addiction;
+            return acc;
+          }, {} as Record<string, { count: number, sumAddiction: number, max: number, min: number }>);
+
+          const labels = Object.keys(groupedByPlatform);
+          const addictionAverages = labels.map(p => Number((groupedByPlatform[p].sumAddiction / groupedByPlatform[p].count).toFixed(1)));
+          const maxAddictions = labels.map(p => groupedByPlatform[p].max);
+          const minAddictions = labels.map(p => groupedByPlatform[p].min);
+
+          setPlatformData({ labels, addiction: addictionAverages, max: maxAddictions, min: minAddictions });
+
+          // Calculate depression rate grouped by social interaction level
+          const groupedByInteraction = data.reduce((acc, row) => {
+            const levelStr = row.social_interaction_level ? String(row.social_interaction_level).trim().toLowerCase() : 'unknown';
+            const formattedLevel = levelStr.charAt(0).toUpperCase() + levelStr.slice(1);
+
+            if (!acc[formattedLevel]) acc[formattedLevel] = { count: 0, sumDepression: 0 };
+            acc[formattedLevel].count++;
+            acc[formattedLevel].sumDepression += (row.depression_label || 0);
+            return acc;
+          }, {} as Record<string, { count: number, sumDepression: number }>);
+
+          const interactionLabels = Object.keys(groupedByInteraction);
+          const depressionRates = interactionLabels.map(l =>
+            ((groupedByInteraction[l].sumDepression / groupedByInteraction[l].count) * 100).toFixed(1)
+          );
+
+          setInteractionData({ labels: interactionLabels, values: depressionRates.map(Number) });
+
+          // Calculate scatter points: Usage Hours (X) vs Depression Rate (Y)
+          const groupedByHours = data.reduce((acc, row) => {
+            const hours = Math.round(row.daily_social_media_hours || 0);
+            if (!acc[hours]) acc[hours] = { count: 0, sumDepression: 0 };
+            acc[hours].count++;
+            acc[hours].sumDepression += (row.depression_label || 0);
+            return acc;
+          }, {} as Record<number, { count: number, sumDepression: number }>);
+
+          const scatterPoints = Object.keys(groupedByHours).map(h => ({
+            x: Number(h),
+            y: Number(((groupedByHours[Number(h)].sumDepression / groupedByHours[Number(h)].count) * 100).toFixed(1))
+          })).sort((a, b) => a.x - b.x);
+
+          setScatterData(scatterPoints);
         } else {
           console.warn('No data found in teen_mental_health_cleaned table.');
         }
@@ -121,155 +203,244 @@ export function DashboardPage() {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-5">
-        {/* Mood Trend — Line */}
+        {/* Addiction by Platform — Bar */}
         <ChartCard>
-          <SectionHeader title="Mood Trend" badge="12 months" />
+          <SectionHeader title="Avg. Addiction Level by Platform" badge="Live Data" />
           <div className="h-60">
-            <Line
-              data={{
-                labels: moodTrendData.labels,
-                datasets: [{
-                  label: 'Average Mood',
-                  data: moodTrendData.values,
-                  borderColor: CHART_COLORS.primary,
-                  backgroundColor: CHART_COLORS.primary + '18',
-                  fill: true,
-                  tension: 0.4,
-                  pointRadius: 4,
-                  pointBackgroundColor: '#fff',
-                  pointBorderColor: CHART_COLORS.primary,
-                  pointBorderWidth: 2,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    backgroundColor: CHART_COLORS.tooltipBg,
-                    titleFont: { family: '"Plus Jakarta Sans"' },
-                    bodyFont: { family: '"Plus Jakarta Sans"' },
-                    bodyColor: CHART_COLORS.tooltipText,
-                    titleColor: CHART_COLORS.tooltipText,
-                    cornerRadius: 12,
-                    padding: 12,
+            {loading ? (
+              <div className="w-full h-full bg-mist-light/30 animate-pulse rounded-md" />
+            ) : (
+              <Bar
+                data={{
+                  labels: platformData.labels,
+                  datasets: [
+                    {
+                      label: 'Avg Addiction Level',
+                      data: platformData.addiction,
+                      backgroundColor: CHART_COLORS.secondary, // Dusk
+                      borderRadius: 4,
+                    },
+                    {
+                      label: 'Highest',
+                      data: platformData.max,
+                      backgroundColor: CHART_COLORS.primary, // Sage
+                      borderRadius: 4,
+                    },
+                    {
+                      label: 'Lowest',
+                      data: platformData.min,
+                      backgroundColor: CHART_COLORS.mid1, // Sage Mid
+                      borderRadius: 4,
+                    }
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: 'top',
+                      labels: {
+                        color: CHART_COLORS.label,
+                        font: { family: '"Plus Jakarta Sans"', size: 11 },
+                        usePointStyle: true,
+                        boxWidth: 8,
+                      }
+                    },
+                    tooltip: {
+                      backgroundColor: CHART_COLORS.tooltipBg,
+                      titleFont: { family: '"Plus Jakarta Sans"' },
+                      bodyFont: { family: '"Plus Jakarta Sans"' },
+                      bodyColor: CHART_COLORS.tooltipText,
+                      titleColor: CHART_COLORS.tooltipText,
+                      cornerRadius: 12,
+                      padding: 12,
+                    },
                   },
-                },
-                scales: {
-                  x: {
-                    ticks: { color: CHART_COLORS.label, font: { family: '"Plus Jakarta Sans"', size: 11 } },
-                    grid: { display: false },
-                    border: { display: false },
+                  scales: {
+                    x: {
+                      ticks: { color: CHART_COLORS.label, font: { family: '"Plus Jakarta Sans"', size: 11 } },
+                      grid: { display: false },
+                      border: { display: false },
+                    },
+                    y: {
+                      min: 0,
+                      ticks: { color: CHART_COLORS.label, font: { family: '"Plus Jakarta Sans"', size: 11 } },
+                      grid: { color: CHART_COLORS.grid },
+                      border: { display: false },
+                    },
                   },
-                  y: {
-                    min: 4, max: 8,
-                    ticks: { color: CHART_COLORS.label, font: { family: '"Plus Jakarta Sans"', size: 11 } },
-                    grid: { color: CHART_COLORS.grid },
-                    border: { display: false },
-                  },
-                },
-              }}
-            />
+                }}
+              />
+            )}
           </div>
         </ChartCard>
 
-        {/* Stress Triggers — Horizontal Bar */}
+        {/* Depression Rate by Interaction Group — Pie */}
         <ChartCard>
-          <SectionHeader title="Stress Triggers" badge="2026 Survey" badgeVariant="dusk" />
+          <SectionHeader title="Depression Rate by Interaction Group" badge="Live Data" />
           <div className="h-60">
-            <Bar
-              data={{
-                labels: stressTriggers.labels,
-                datasets: [{
-                  label: 'Responses (%)',
-                  data: stressTriggers.values,
-                  backgroundColor: ['#5C7A6B', '#6D8A7B', '#7D9A8B', '#8FAAAA', '#C47E72', '#D49080'],
-                  borderRadius: 6,
-                  maxBarThickness: 28,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                indexAxis: 'y',
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    backgroundColor: CHART_COLORS.tooltipBg,
-                    titleFont: { family: '"Plus Jakarta Sans"' },
-                    bodyFont: { family: '"Plus Jakarta Sans"' },
-                    bodyColor: CHART_COLORS.tooltipText,
-                    titleColor: CHART_COLORS.tooltipText,
-                    cornerRadius: 12,
-                    padding: 12,
+            {loading ? (
+              <div className="w-full h-full bg-mist-light/30 animate-pulse rounded-md" />
+            ) : (
+              <Scatter
+                data={{
+                  datasets: [{
+                    label: 'Depression Rate (%)',
+                    data: interactionData.labels.map((label, index) => ({
+                      x: label,
+                      y: interactionData.values[index],
+                    })),
+                    pointRadius: 8,
+                    pointHoverRadius: 10,
+                    pointBackgroundColor: CHART_COLORS.secondary,
+                    pointBorderColor: '#FFFFFF',
+                    pointBorderWidth: 2,
+                  }],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  layout: {
+                    padding: { top: 8, right: 8, bottom: 0, left: 0 },
                   },
-                },
-                scales: {
-                  x: {
-                    ticks: { color: CHART_COLORS.label, font: { family: '"Plus Jakarta Sans"', size: 11 } },
-                    grid: { color: CHART_COLORS.grid },
-                    border: { display: false },
+                  plugins: {
+                    lollipopStemPlugin: {
+                      enabled: true,
+                      baselineValue: 0,
+                      stemColor: CHART_COLORS.mid1,
+                      stemWidth: 4,
+                    },
+                    legend: {
+                      display: false,
+                    },
+                    tooltip: {
+                      backgroundColor: CHART_COLORS.tooltipBg,
+                      titleFont: { family: '"Plus Jakarta Sans"' },
+                      bodyFont: { family: '"Plus Jakarta Sans"' },
+                      bodyColor: CHART_COLORS.tooltipText,
+                      titleColor: CHART_COLORS.tooltipText,
+                      cornerRadius: 12,
+                      padding: 12,
+                      callbacks: {
+                        label: function (context: any) {
+                          return ` ${context.raw.x}: ${context.raw.y}%`;
+                        }
+                      }
+                    }
                   },
-                  y: {
-                    ticks: { color: '#4A5E54', font: { family: '"Plus Jakarta Sans"', size: 12 } },
-                    grid: { display: false },
-                    border: { display: false },
+                  scales: {
+                    x: {
+                      type: 'category',
+                      labels: interactionData.labels,
+                      ticks: {
+                        color: CHART_COLORS.label,
+                        font: { family: '"Plus Jakarta Sans"', size: 11 },
+                      },
+                      grid: { display: false },
+                      border: { display: false },
+                    },
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        color: CHART_COLORS.label,
+                        font: { family: '"Plus Jakarta Sans"', size: 11 },
+                        callback: function (value: any) {
+                          return `${value}%`;
+                        }
+                      },
+                      title: {
+                        display: true,
+                        text: 'Depression Rate (%)',
+                        color: CHART_COLORS.label,
+                      },
+                      grid: { color: CHART_COLORS.grid },
+                      border: { display: false },
+                    },
                   },
-                },
-              }}
-            />
+                } as any}
+              />
+            )}
           </div>
         </ChartCard>
       </div>
 
-      {/* Wellbeing Doughnut + Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <ChartCard>
-          <SectionHeader title="Wellbeing Breakdown" />
-          <div className="h-56 flex items-center justify-center">
-            <Doughnut
-              data={{
-                labels: wellbeingBreakdown.labels,
-                datasets: [{
-                  data: wellbeingBreakdown.values,
-                  backgroundColor: CHART_COLORS.series,
-                  borderColor: '#FFFFFF',
-                  borderWidth: 3,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '65%',
-                plugins: {
-                  legend: {
-                    position: 'bottom',
-                    labels: {
-                      color: CHART_COLORS.label,
-                      font: { family: '"Plus Jakarta Sans"', size: 11 },
-                      padding: 16,
-                      usePointStyle: true,
-                      pointStyleWidth: 10,
+      {/* Usage Scatter + Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="lg:col-span-1">
+          <ChartCard>
+            <SectionHeader title="Usage Hours vs. Depression Rate" badge="Live Data" />
+            <div className="h-64 flex items-center justify-center">
+              {loading ? (
+                <div className="w-full h-full bg-mist-light/30 animate-pulse rounded-md" />
+              ) : (
+                <Line
+                  data={{
+                    datasets: [{
+                      label: 'Depression Rate (%)',
+                      data: scatterData,
+                      borderColor: CHART_COLORS.primary,
+                      backgroundColor: CHART_COLORS.primary + '18',
+                      fill: true,
+                      tension: 0.4,
+                      pointRadius: 6,
+                      pointHoverRadius: 8,
+                      pointBackgroundColor: CHART_COLORS.primary,
+                      pointBorderColor: '#FFFFFF',
+                      pointBorderWidth: 1.5,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                        backgroundColor: CHART_COLORS.tooltipBg,
+                        titleFont: { family: '"Plus Jakarta Sans"' },
+                        bodyFont: { family: '"Plus Jakarta Sans"' },
+                        bodyColor: CHART_COLORS.tooltipText,
+                        titleColor: CHART_COLORS.tooltipText,
+                        cornerRadius: 12,
+                        padding: 12,
+                        callbacks: {
+                          label: function (context: any) {
+                            return ` ${context.raw.x}h usage: ${context.raw.y}% depression rate`;
+                          }
+                        }
+                      },
                     },
-                  },
-                  tooltip: {
-                    backgroundColor: CHART_COLORS.tooltipBg,
-                    titleFont: { family: '"Plus Jakarta Sans"' },
-                    bodyFont: { family: '"Plus Jakarta Sans"' },
-                    bodyColor: CHART_COLORS.tooltipText,
-                    titleColor: CHART_COLORS.tooltipText,
-                    cornerRadius: 12,
-                    padding: 12,
-                  },
-                },
-              }}
-            />
-          </div>
-        </ChartCard>
+                    scales: {
+                      x: {
+                        type: 'linear',
+                        title: { display: true, text: 'Daily Social Media Hours', color: CHART_COLORS.label },
+                        min: 1,
+                        max: 8,
+                        offset: true,
+                        ticks: { color: CHART_COLORS.label, font: { family: '"Plus Jakarta Sans"', size: 11 } },
+                        grid: { color: CHART_COLORS.grid },
+                        border: { display: false },
+                      },
+                      y: {
+                        title: { display: true, text: 'Depression Rate (%)', color: CHART_COLORS.label },
+                        min: 0,
+                        max: 10,
+                        offset: true,
+                        ticks: { color: CHART_COLORS.label, font: { family: '"Plus Jakarta Sans"', size: 11 } },
+                        grid: { color: CHART_COLORS.grid },
+                        border: { display: false },
+                      },
+                    },
+                  }}
+                />
+              )}
+            </div>
+          </ChartCard>
+        </div>
 
         {/* Quick insight cards */}
-        <div className="lg:col-span-2 bg-card border border-mist-light rounded-md shadow-card p-6">
+        <div className="lg:col-span-1 bg-card border border-mist-light rounded-md shadow-card p-6 overflow-y-auto">
           <SectionHeader title="Quick Insights" badge="AI Summary" badgeVariant="dusk" />
           <ul className="space-y-3 font-body text-sm text-text-body">
             <li className="flex items-start gap-3 bg-cream rounded-md p-4 border border-mist-light">

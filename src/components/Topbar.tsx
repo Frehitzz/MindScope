@@ -1,4 +1,4 @@
-import { Sun, Droplets, Heart } from 'lucide-react';
+import { Sun, Droplets } from 'lucide-react';
 
 export function Topbar() {
   return (
