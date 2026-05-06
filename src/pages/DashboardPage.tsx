@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,14 +12,15 @@ import {
   Filler,
 } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
-import { ClipboardList, Smile, HeartHandshake, Sparkles, TrendingUp, Users } from 'lucide-react';
+import { Activity, HeartPulse, Moon, Smartphone, Sparkles, HeartHandshake, TrendingUp } from 'lucide-react';
+
+import { supabase } from '../lib/supabase';
 
 import { StatCard } from '../components/StatCard';
 import { SectionHeader } from '../components/SectionHeader';
 import { ChartCard } from '../components/ChartCard';
 import { CHART_COLORS } from '../constants/chartColors';
 import {
-  statsOverview,
   moodTrendData,
   stressTriggers,
   wellbeingBreakdown,
@@ -31,9 +33,60 @@ ChartJS.register(
   Tooltip, Legend, Filler,
 );
 
-const statIcons = [ClipboardList, Smile, HeartHandshake, Sparkles];
+const statIcons = [Activity, HeartPulse, Moon, Smartphone];
 
 export function DashboardPage() {
+  const [stats, setStats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const { data, error } = await supabase
+          .from('teen_mental_health_cleaned')
+          .select('stress_level, anxiety_level, sleep_hours, daily_social_media_hours');
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const totalRows = data.length;
+          const sumStress = data.reduce((acc, row) => acc + (row.stress_level || 0), 0);
+          const sumAnxiety = data.reduce((acc, row) => acc + (row.anxiety_level || 0), 0);
+          const sumSleep = data.reduce((acc, row) => acc + (row.sleep_hours || 0), 0);
+          const sumSocial = data.reduce((acc, row) => acc + (row.daily_social_media_hours || 0), 0);
+
+          const maxStress = Math.max(...data.map(d => d.stress_level || 0));
+          const maxAnxiety = Math.max(...data.map(d => d.anxiety_level || 0));
+          const minSleep = Math.min(...data.map(d => d.sleep_hours || 0)).toFixed(1);
+          const maxSleep = Math.max(...data.map(d => d.sleep_hours || 0)).toFixed(1);
+          const maxSocial = Math.max(...data.map(d => d.daily_social_media_hours || 0)).toFixed(1);
+
+          setStats([
+            { label: 'Avg Stress Level', value: (sumStress / totalRows).toFixed(1), delta: `Max recorded: ${maxStress}`, deltaPositive: true },
+            { label: 'Avg Anxiety Level', value: (sumAnxiety / totalRows).toFixed(1), delta: `Max recorded: ${maxAnxiety}`, deltaPositive: true },
+            { label: 'Avg Sleep Hours', value: (sumSleep / totalRows).toFixed(1) + 'h', delta: `Range: ${minSleep}h - ${maxSleep}h`, deltaPositive: true },
+            { label: 'Daily Social Media', value: (sumSocial / totalRows).toFixed(1) + 'h', delta: `Max: ${maxSocial}h/day`, deltaPositive: true },
+          ]);
+        } else {
+          console.warn('No data found in teen_mental_health_cleaned table.');
+        }
+      } catch (err) {
+        console.error('Error fetching Supabase data:', err);
+        // Fallback to mock data if fetch fails (e.g., if .env is missing)
+        setStats([
+          { label: 'Avg Stress Level', value: 'Error', delta: 'Could not fetch data', deltaPositive: true },
+          { label: 'Avg Anxiety Level', value: 'Error', delta: 'Could not fetch data', deltaPositive: true },
+          { label: 'Avg Sleep Hours', value: 'Error', delta: 'Could not fetch data', deltaPositive: true },
+          { label: 'Avg Social Media Usage', value: 'Error', delta: 'Could not fetch data', deltaPositive: true },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="space-y-7">
       {/* Page heading */}
@@ -46,13 +99,24 @@ export function DashboardPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statsOverview.map((stat, i) => (
-          <StatCard 
-            key={stat.label} 
-            {...stat} 
-            icon={statIcons[i]} 
-          />
-        ))}
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-card border border-mist-light rounded-md shadow-card p-5 h-[116px] animate-pulse flex flex-col gap-2 relative">
+              <div className="h-3 bg-mist-light/60 rounded w-1/3 mb-2"></div>
+              <div className="h-8 bg-mist-light/60 rounded w-1/2"></div>
+              <div className="h-3 bg-mist-light/60 rounded w-2/3 mt-auto"></div>
+              <div className="absolute top-5 right-5 w-8 h-8 rounded-lg bg-mist-light/40"></div>
+            </div>
+          ))
+        ) : (
+          stats.map((stat, i) => (
+            <StatCard
+              key={stat.label}
+              {...stat}
+              icon={statIcons[i]}
+            />
+          ))
+        )}
       </div>
 
       {/* Charts row */}
@@ -120,7 +184,7 @@ export function DashboardPage() {
                 datasets: [{
                   label: 'Responses (%)',
                   data: stressTriggers.values,
-                  backgroundColor: ['#5C7A6B','#6D8A7B','#7D9A8B','#8FAAAA','#C47E72','#D49080'],
+                  backgroundColor: ['#5C7A6B', '#6D8A7B', '#7D9A8B', '#8FAAAA', '#C47E72', '#D49080'],
                   borderRadius: 6,
                   maxBarThickness: 28,
                 }],

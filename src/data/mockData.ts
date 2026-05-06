@@ -1,10 +1,10 @@
 /* ─── Fake / Mock Data for Dashboard ─── */
 
 export const statsOverview = [
-  { label: 'Total Responses',  value: '12,847', delta: '+8.2% from last month' },
-  { label: 'Average Mood',     value: '6.4',    delta: '+0.3 from last month' },
-  { label: 'Help-Seeking Rate', value: '34%',   delta: '+5% from last quarter' },
-  { label: 'Active Programs',  value: '18',     delta: '3 new this semester' },
+  { label: 'Avg Stress Level', value: '6.8/10', delta: '+0.4 from last month', deltaPositive: false },
+  { label: 'Avg Anxiety Level', value: '7.1/10', delta: '+0.2 from last month', deltaPositive: false },
+  { label: 'Avg Sleep Hours', value: '6.2h', delta: '-0.5h from last month', deltaPositive: false },
+  { label: 'Avg Social Media Usage', value: '4.5h', delta: '+1.2h from last month', deltaPositive: false },
 ];
 
 export const moodTrendData = {
@@ -31,7 +31,7 @@ export const helpSeekingSources = {
 
 export const monthlyEngagement = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-  checkIns:  [820, 910, 1050, 1120, 1240, 1310, 1180, 1400, 1520, 1460, 1550, 1630],
+  checkIns: [820, 910, 1050, 1120, 1240, 1310, 1180, 1400, 1520, 1460, 1550, 1630],
   resources: [340, 380, 420, 510, 560, 610, 580, 650, 720, 690, 740, 780],
 };
 
@@ -43,7 +43,7 @@ export const ageGroupDistribution = {
 export const interventionEffectiveness = {
   labels: ['Counseling', 'Peer Support', 'Mindfulness', 'Exercise', 'Art Therapy', 'Journaling'],
   before: [4.2, 4.8, 5.0, 4.5, 4.9, 5.1],
-  after:  [6.5, 6.8, 6.9, 6.7, 6.4, 6.6],
+  after: [6.5, 6.8, 6.9, 6.7, 6.4, 6.6],
 };
 
 /* ─── Data table page ─── */
@@ -61,16 +61,16 @@ export interface StudentRecord {
 }
 
 export const studentRecords: StudentRecord[] = [
-  { id: 'MS-001', name: 'Alex Rivera',     age: 15, grade: '10th', moodScore: 7.2, stressLevel: 'Low',      helpSeeking: true,  lastCheckIn: '2026-05-01', program: 'Peer Support' },
-  { id: 'MS-002', name: 'Jordan Lee',      age: 16, grade: '11th', moodScore: 5.4, stressLevel: 'Moderate', helpSeeking: false, lastCheckIn: '2026-04-28', program: 'Mindfulness' },
-  { id: 'MS-003', name: 'Sam Patel',       age: 14, grade: '9th',  moodScore: 6.8, stressLevel: 'Low',      helpSeeking: true,  lastCheckIn: '2026-05-03', program: 'Art Therapy' },
-  { id: 'MS-004', name: 'Taylor Kim',      age: 17, grade: '12th', moodScore: 4.1, stressLevel: 'High',     helpSeeking: true,  lastCheckIn: '2026-05-05', program: 'Counseling' },
-  { id: 'MS-005', name: 'Morgan Chen',     age: 15, grade: '10th', moodScore: 7.8, stressLevel: 'Low',      helpSeeking: false, lastCheckIn: '2026-04-30', program: 'Exercise' },
-  { id: 'MS-006', name: 'Casey Brooks',    age: 16, grade: '11th', moodScore: 5.9, stressLevel: 'Moderate', helpSeeking: true,  lastCheckIn: '2026-05-02', program: 'Journaling' },
-  { id: 'MS-007', name: 'Riley Nguyen',    age: 13, grade: '8th',  moodScore: 6.3, stressLevel: 'Moderate', helpSeeking: false, lastCheckIn: '2026-04-25', program: 'Peer Support' },
-  { id: 'MS-008', name: 'Avery Thompson',  age: 17, grade: '12th', moodScore: 3.8, stressLevel: 'High',     helpSeeking: true,  lastCheckIn: '2026-05-04', program: 'Counseling' },
-  { id: 'MS-009', name: 'Quinn Davis',     age: 14, grade: '9th',  moodScore: 7.5, stressLevel: 'Low',      helpSeeking: false, lastCheckIn: '2026-04-29', program: 'Mindfulness' },
-  { id: 'MS-010', name: 'Drew Martinez',   age: 16, grade: '11th', moodScore: 5.2, stressLevel: 'Moderate', helpSeeking: true,  lastCheckIn: '2026-05-01', program: 'Art Therapy' },
-  { id: 'MS-011', name: 'Jamie Wilson',    age: 15, grade: '10th', moodScore: 8.1, stressLevel: 'Low',      helpSeeking: false, lastCheckIn: '2026-05-03', program: 'Exercise' },
-  { id: 'MS-012', name: 'Reese Okafor',    age: 17, grade: '12th', moodScore: 4.5, stressLevel: 'High',     helpSeeking: true,  lastCheckIn: '2026-05-05', program: 'Counseling' },
+  { id: 'MS-001', name: 'Alex Rivera', age: 15, grade: '10th', moodScore: 7.2, stressLevel: 'Low', helpSeeking: true, lastCheckIn: '2026-05-01', program: 'Peer Support' },
+  { id: 'MS-002', name: 'Jordan Lee', age: 16, grade: '11th', moodScore: 5.4, stressLevel: 'Moderate', helpSeeking: false, lastCheckIn: '2026-04-28', program: 'Mindfulness' },
+  { id: 'MS-003', name: 'Sam Patel', age: 14, grade: '9th', moodScore: 6.8, stressLevel: 'Low', helpSeeking: true, lastCheckIn: '2026-05-03', program: 'Art Therapy' },
+  { id: 'MS-004', name: 'Taylor Kim', age: 17, grade: '12th', moodScore: 4.1, stressLevel: 'High', helpSeeking: true, lastCheckIn: '2026-05-05', program: 'Counseling' },
+  { id: 'MS-005', name: 'Morgan Chen', age: 15, grade: '10th', moodScore: 7.8, stressLevel: 'Low', helpSeeking: false, lastCheckIn: '2026-04-30', program: 'Exercise' },
+  { id: 'MS-006', name: 'Casey Brooks', age: 16, grade: '11th', moodScore: 5.9, stressLevel: 'Moderate', helpSeeking: true, lastCheckIn: '2026-05-02', program: 'Journaling' },
+  { id: 'MS-007', name: 'Riley Nguyen', age: 13, grade: '8th', moodScore: 6.3, stressLevel: 'Moderate', helpSeeking: false, lastCheckIn: '2026-04-25', program: 'Peer Support' },
+  { id: 'MS-008', name: 'Avery Thompson', age: 17, grade: '12th', moodScore: 3.8, stressLevel: 'High', helpSeeking: true, lastCheckIn: '2026-05-04', program: 'Counseling' },
+  { id: 'MS-009', name: 'Quinn Davis', age: 14, grade: '9th', moodScore: 7.5, stressLevel: 'Low', helpSeeking: false, lastCheckIn: '2026-04-29', program: 'Mindfulness' },
+  { id: 'MS-010', name: 'Drew Martinez', age: 16, grade: '11th', moodScore: 5.2, stressLevel: 'Moderate', helpSeeking: true, lastCheckIn: '2026-05-01', program: 'Art Therapy' },
+  { id: 'MS-011', name: 'Jamie Wilson', age: 15, grade: '10th', moodScore: 8.1, stressLevel: 'Low', helpSeeking: false, lastCheckIn: '2026-05-03', program: 'Exercise' },
+  { id: 'MS-012', name: 'Reese Okafor', age: 17, grade: '12th', moodScore: 4.5, stressLevel: 'High', helpSeeking: true, lastCheckIn: '2026-05-05', program: 'Counseling' },
 ];
