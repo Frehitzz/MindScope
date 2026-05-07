@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowUpDown, Search, X } from 'lucide-react';
+import { ArrowUpDown, Search, X, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { SectionHeader } from '../components/SectionHeader';
 import { supabase } from '../lib/supabase';
 
@@ -162,13 +163,43 @@ export function DataTablePage() {
     return 'Unknown';
   };
 
+  const handleExport = () => {
+    const exportData = filtered.map(row => ({
+      'ID': row.id,
+      'Gender': row.gender ?? 'Unknown',
+      'Social Interaction': row.social_interaction_level ?? 'Unknown',
+      'Daily Social Media Hours': row.daily_social_media_hours ?? 'Unknown',
+      'Primary Platform': row.platform_usage ?? 'Unknown',
+      'Depression Status': formatDepressionStatus(row.depression_label)
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+
+    XLSX.writeFile(workbook, 'MindScope_Data.xlsx');
+  };
+
   return (
     <div className="space-y-7">
-      <div>
-        <h1 className="font-display text-3xl font-medium text-forest mb-1">Data Table</h1>
-        <p className="font-body text-sm text-text-muted">
-          Browse and search individual student wellbeing records.
-        </p>
+      <div className="flex items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-medium text-forest mb-1">Data Table</h1>
+          <p className="font-body text-sm text-text-muted">
+            Browse and search individual student wellbeing records.
+          </p>
+        </div>
+        <button
+          onClick={handleExport}
+          className="
+            flex items-center gap-2 px-4 py-2 rounded-md font-body text-[13px] font-semibold
+            bg-sage text-white hover:bg-sage-dark shadow-sm hover:-translate-y-0.5 hover:shadow-card-hover
+            transition-all duration-300 ease-out shrink-0
+          "
+        >
+          <Download size={15} />
+          Export Data
+        </button>
       </div>
 
       <div className="sticky -top-5 z-20 bg-cream pt-5 pb-4 mb-2 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
