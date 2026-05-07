@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
 import { DashboardPage } from './pages/DashboardPage';
-import { AnalyticsPage } from './pages/AnalyticsPage';
+import { InsightPage } from './pages/InsightPage';
 import { DataTablePage } from './pages/DataTablePage';
 import './App.css';
 
@@ -13,10 +13,10 @@ function App() {
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Topbar />
-          <main className="flex-1 overflow-y-auto p-9 space-y-7">
+          <main className="flex-1 overflow-y-auto p-5 space-y-7">
             <Routes>
               <Route path="/" element={<DashboardPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/insight" element={<InsightPage />} />
               <Route path="/data-table" element={<DataTablePage />} />
             </Routes>
           </main>

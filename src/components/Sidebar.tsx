@@ -11,7 +11,7 @@ import {
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
-  { label: 'Analytics', icon: BarChart3, to: '/analytics' },
+  { label: 'Insight', icon: BarChart3, to: '/insight' },
   { label: 'Data Table', icon: Table2, to: '/data-table' },
 ];
 

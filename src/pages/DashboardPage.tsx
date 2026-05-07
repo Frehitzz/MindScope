@@ -12,7 +12,7 @@ import {
   Filler,
 } from 'chart.js';
 import { Bar, Line, Scatter } from 'react-chartjs-2';
-import { Activity, HeartPulse, Moon, Smartphone, Sparkles, HeartHandshake, TrendingUp } from 'lucide-react';
+import { Activity, HeartPulse, Moon, Smartphone, HeartHandshake, TrendingUp } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 
@@ -441,28 +441,28 @@ export function DashboardPage() {
 
         {/* Quick insight cards */}
         <div className="lg:col-span-1 bg-card border border-mist-light rounded-md shadow-card p-6 overflow-y-auto">
-          <SectionHeader title="Quick Insights" badge="AI Summary" badgeVariant="dusk" />
+          <SectionHeader title="Quick Insights" badge="Chart Guide" badgeVariant="dusk" />
           <ul className="space-y-3 font-body text-sm text-text-body">
             <li className="flex items-start gap-3 bg-cream rounded-md p-4 border border-mist-light">
-              <Sparkles size={18} className="text-sage shrink-0 mt-0.5" />
+              <Smartphone size={18} className="text-sage shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-forest mb-1">Mood scores are trending upward</p>
-                <p className="text-text-muted text-xs">Average mood has increased by 0.3 points over the last month, with the biggest gains in the 15–16 age group.</p>
+                <p className="font-medium text-forest mb-1">Platform Addiction</p>
+                <p className="text-text-muted text-xs">Displays the average, highest, and lowest addiction levels reported by teens across different social media platforms.</p>
               </div>
             </li>
             <li className="flex items-start gap-3 bg-cream rounded-md p-4 border border-mist-light">
               <HeartHandshake size={18} className="text-dusk shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-forest mb-1">Help-seeking is growing</p>
-                <p className="text-text-muted text-xs">34% of respondents reported seeking help — a 5% increase from last quarter. School counselors remain the top resource.</p>
+                <p className="font-medium text-forest mb-1">Interaction & Depression</p>
+                <p className="text-text-muted text-xs">Shows the percentage of teens with a depression label within each social interaction group (Low, Medium, High).</p>
               </div>
             </li>
             <li className="flex items-start gap-3 bg-cream rounded-md p-4 border border-mist-light">
               <TrendingUp size={18} className="text-sage shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-forest mb-1">Academic stress still leads</p>
-                <p className="text-text-muted text-xs">78% of teens cite academics as their top stressor. Consider expanding study support programs this semester.</p>
-              </div>
+                <div>
+                  <p className="font-medium text-forest mb-1">Usage Hours vs. Rate</p>
+                  <p className="text-text-muted text-xs">Tracks how depression rates change in relation to the number of daily hours spent on social media, grouped by rounded hour.</p>
+                </div>
             </li>
           </ul>
         </div>
