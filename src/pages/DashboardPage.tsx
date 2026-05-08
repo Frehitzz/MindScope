@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
 import {
   Chart as ChartJS,
+  type Chart,
+  type ChartOptions,
   CategoryScale,
   LinearScale,
   BarElement,
   PointElement,
   LineElement,
   ArcElement,
+  type Plugin,
+  type ScatterDataPoint,
+  type TooltipItem,
   Tooltip,
   Legend,
   Filler,
@@ -21,10 +26,53 @@ import { SectionHeader } from '../components/SectionHeader';
 import { ChartCard } from '../components/ChartCard';
 import { CHART_COLORS } from '../constants/chartColors';
 
-const lollipopStemPlugin = {
+type DashboardRow = {
+  stress_level: number | null;
+  anxiety_level: number | null;
+  sleep_hours: number | null;
+  daily_social_media_hours: number | null;
+  platform_usage: string | null;
+  addiction_level: number | null;
+  social_interaction_level: string | null;
+  depression_label: number | null;
+};
+
+type Stat = {
+  label: string;
+  value: string;
+  delta: string;
+  deltaPositive: boolean;
+};
+
+type PlatformData = {
+  labels: string[];
+  addiction: number[];
+  max: number[];
+  min: number[];
+};
+
+type InteractionData = {
+  labels: string[];
+  values: number[];
+};
+
+type LollipopStemPluginOptions = {
+  enabled?: boolean;
+  baselineValue?: number;
+  stemColor?: string;
+  stemWidth?: number;
+};
+
+type ScatterChartOptions = ChartOptions<'scatter'> & {
+  plugins?: NonNullable<ChartOptions<'scatter'>['plugins']> & {
+    lollipopStemPlugin?: LollipopStemPluginOptions;
+  };
+};
+
+const lollipopStemPlugin: Plugin<'scatter'> = {
   id: 'lollipopStemPlugin',
-  afterDatasetsDraw(chart: any) {
-    const pluginOptions = chart?.options?.plugins?.lollipopStemPlugin;
+  afterDatasetsDraw(chart: Chart<'scatter'>) {
+    const pluginOptions = (chart.options.plugins as ScatterChartOptions['plugins'])?.lollipopStemPlugin;
     if (!pluginOptions?.enabled) return;
 
     const datasetMeta = chart.getDatasetMeta(0);
@@ -39,7 +87,7 @@ const lollipopStemPlugin = {
     ctx.lineWidth = pluginOptions.stemWidth ?? 3;
     ctx.lineCap = 'round';
 
-    datasetMeta.data.forEach((point: any) => {
+    datasetMeta.data.forEach((point) => {
       ctx.beginPath();
       ctx.moveTo(point.x, baselinePixel);
       ctx.lineTo(point.x, point.y);
@@ -60,10 +108,10 @@ ChartJS.register(
 const statIcons = [Activity, HeartPulse, Moon, Smartphone];
 
 export function DashboardPage() {
-  const [stats, setStats] = useState<any[]>([]);
-  const [platformData, setPlatformData] = useState<{ labels: string[], addiction: number[], max: number[], min: number[] }>({ labels: [], addiction: [], max: [], min: [] });
-  const [interactionData, setInteractionData] = useState<{ labels: string[], values: number[] }>({ labels: [], values: [] });
-  const [scatterData, setScatterData] = useState<{ x: number, y: number }[]>([]);
+  const [stats, setStats] = useState<Stat[]>([]);
+  const [platformData, setPlatformData] = useState<PlatformData>({ labels: [], addiction: [], max: [], min: [] });
+  const [interactionData, setInteractionData] = useState<InteractionData>({ labels: [], values: [] });
+  const [scatterData, setScatterData] = useState<ScatterDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,18 +123,20 @@ export function DashboardPage() {
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
-          const totalRows = data.length;
-          const sumStress = data.reduce((acc, row) => acc + (row.stress_level || 0), 0);
-          const sumAnxiety = data.reduce((acc, row) => acc + (row.anxiety_level || 0), 0);
-          const sumSleep = data.reduce((acc, row) => acc + (row.sleep_hours || 0), 0);
-          const sumSocial = data.reduce((acc, row) => acc + (row.daily_social_media_hours || 0), 0);
+        const rows = (data ?? []) as DashboardRow[];
 
-          const maxStress = Math.max(...data.map(d => d.stress_level || 0));
-          const maxAnxiety = Math.max(...data.map(d => d.anxiety_level || 0));
-          const minSleep = Math.min(...data.map(d => d.sleep_hours || 0)).toFixed(1);
-          const maxSleep = Math.max(...data.map(d => d.sleep_hours || 0)).toFixed(1);
-          const maxSocial = Math.max(...data.map(d => d.daily_social_media_hours || 0)).toFixed(1);
+        if (rows.length > 0) {
+          const totalRows = rows.length;
+          const sumStress = rows.reduce((acc, row) => acc + (row.stress_level || 0), 0);
+          const sumAnxiety = rows.reduce((acc, row) => acc + (row.anxiety_level || 0), 0);
+          const sumSleep = rows.reduce((acc, row) => acc + (row.sleep_hours || 0), 0);
+          const sumSocial = rows.reduce((acc, row) => acc + (row.daily_social_media_hours || 0), 0);
+
+          const maxStress = Math.max(...rows.map(d => d.stress_level || 0));
+          const maxAnxiety = Math.max(...rows.map(d => d.anxiety_level || 0));
+          const minSleep = Math.min(...rows.map(d => d.sleep_hours || 0)).toFixed(1);
+          const maxSleep = Math.max(...rows.map(d => d.sleep_hours || 0)).toFixed(1);
+          const maxSocial = Math.max(...rows.map(d => d.daily_social_media_hours || 0)).toFixed(1);
 
           setStats([
             { label: 'Avg Stress Level', value: (sumStress / totalRows).toFixed(1), delta: `Max recorded: ${maxStress}`, deltaPositive: true },
@@ -96,7 +146,7 @@ export function DashboardPage() {
           ]);
 
           // Calculate averages grouped by platform for the bar chart
-          const groupedByPlatform = data.reduce((acc, row) => {
+          const groupedByPlatform = rows.reduce((acc, row) => {
             const platformStr = row.platform_usage ? String(row.platform_usage).trim() : 'Unknown';
             const formattedPlatform = platformStr.charAt(0).toUpperCase() + platformStr.slice(1).toLowerCase();
 
@@ -117,7 +167,7 @@ export function DashboardPage() {
           setPlatformData({ labels, addiction: addictionAverages, max: maxAddictions, min: minAddictions });
 
           // Calculate depression rate grouped by social interaction level
-          const groupedByInteraction = data.reduce((acc, row) => {
+          const groupedByInteraction = rows.reduce((acc, row) => {
             const levelStr = row.social_interaction_level ? String(row.social_interaction_level).trim().toLowerCase() : 'unknown';
             const formattedLevel = levelStr.charAt(0).toUpperCase() + levelStr.slice(1);
 
@@ -135,7 +185,7 @@ export function DashboardPage() {
           setInteractionData({ labels: interactionLabels, values: depressionRates.map(Number) });
 
           // Calculate scatter points: Usage Hours (X) vs Depression Rate (Y)
-          const groupedByHours = data.reduce((acc, row) => {
+          const groupedByHours = rows.reduce((acc, row) => {
             const hours = Math.round(row.daily_social_media_hours || 0);
             if (!acc[hours]) acc[hours] = { count: 0, sumDepression: 0 };
             acc[hours].count++;
@@ -168,6 +218,69 @@ export function DashboardPage() {
 
     fetchStats();
   }, []);
+
+  const interactionChartOptions: ScatterChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: { top: 8, right: 8, bottom: 0, left: 0 },
+    },
+    plugins: {
+      lollipopStemPlugin: {
+        enabled: true,
+        baselineValue: 0,
+        stemColor: CHART_COLORS.mid1,
+        stemWidth: 4,
+      },
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: CHART_COLORS.tooltipBg,
+        titleFont: { family: '"Plus Jakarta Sans"' },
+        bodyFont: { family: '"Plus Jakarta Sans"' },
+        bodyColor: CHART_COLORS.tooltipText,
+        titleColor: CHART_COLORS.tooltipText,
+        cornerRadius: 12,
+        padding: 12,
+        callbacks: {
+          label(context: TooltipItem<'scatter'>) {
+            const point = context.raw as ScatterDataPoint;
+            return ` ${String(point.x)}: ${point.y}%`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'category',
+        labels: interactionData.labels,
+        ticks: {
+          color: CHART_COLORS.label,
+          font: { family: '"Plus Jakarta Sans"', size: 11 },
+        },
+        grid: { display: false },
+        border: { display: false },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: {
+          color: CHART_COLORS.label,
+          font: { family: '"Plus Jakarta Sans"', size: 11 },
+          callback(value: string | number) {
+            return `${value}%`;
+          }
+        },
+        title: {
+          display: true,
+          text: 'Depression Rate (%)',
+          color: CHART_COLORS.label,
+        },
+        grid: { color: CHART_COLORS.grid },
+        border: { display: false },
+      },
+    },
+  };
 
   return (
     <div className="space-y-7">
@@ -299,67 +412,7 @@ export function DashboardPage() {
                     pointBorderWidth: 2,
                   }],
                 }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  layout: {
-                    padding: { top: 8, right: 8, bottom: 0, left: 0 },
-                  },
-                  plugins: {
-                    lollipopStemPlugin: {
-                      enabled: true,
-                      baselineValue: 0,
-                      stemColor: CHART_COLORS.mid1,
-                      stemWidth: 4,
-                    },
-                    legend: {
-                      display: false,
-                    },
-                    tooltip: {
-                      backgroundColor: CHART_COLORS.tooltipBg,
-                      titleFont: { family: '"Plus Jakarta Sans"' },
-                      bodyFont: { family: '"Plus Jakarta Sans"' },
-                      bodyColor: CHART_COLORS.tooltipText,
-                      titleColor: CHART_COLORS.tooltipText,
-                      cornerRadius: 12,
-                      padding: 12,
-                      callbacks: {
-                        label: function (context: any) {
-                          return ` ${context.raw.x}: ${context.raw.y}%`;
-                        }
-                      }
-                    }
-                  },
-                  scales: {
-                    x: {
-                      type: 'category',
-                      labels: interactionData.labels,
-                      ticks: {
-                        color: CHART_COLORS.label,
-                        font: { family: '"Plus Jakarta Sans"', size: 11 },
-                      },
-                      grid: { display: false },
-                      border: { display: false },
-                    },
-                    y: {
-                      beginAtZero: true,
-                      ticks: {
-                        color: CHART_COLORS.label,
-                        font: { family: '"Plus Jakarta Sans"', size: 11 },
-                        callback: function (value: any) {
-                          return `${value}%`;
-                        }
-                      },
-                      title: {
-                        display: true,
-                        text: 'Depression Rate (%)',
-                        color: CHART_COLORS.label,
-                      },
-                      grid: { color: CHART_COLORS.grid },
-                      border: { display: false },
-                    },
-                  },
-                } as any}
+                options={interactionChartOptions}
               />
             )}
           </div>
@@ -405,8 +458,9 @@ export function DashboardPage() {
                         cornerRadius: 12,
                         padding: 12,
                         callbacks: {
-                          label: function (context: any) {
-                            return ` ${context.raw.x}h usage: ${context.raw.y}% depression rate`;
+                          label(context: TooltipItem<'line'>) {
+                            const point = context.raw as ScatterDataPoint;
+                            return ` ${point.x}h usage: ${point.y}% depression rate`;
                           }
                         }
                       },

@@ -141,21 +141,12 @@ export function DataTablePage() {
   }, [rows, search, platformFilter, interactionFilter, depressionFilter, usageFilter, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, platformFilter, interactionFilter, depressionFilter, usageFilter]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+  const activePage = Math.min(currentPage, totalPages);
 
   const paginatedRows = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
+    const start = (activePage - 1) * PAGE_SIZE;
     return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, currentPage]);
+  }, [activePage, filtered]);
 
   const formatDepressionStatus = (value: number | null) => {
     if (value === 1) return 'Depressed';
@@ -211,7 +202,10 @@ export function DataTablePage() {
               type="text"
               placeholder="Search records..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               className="
                 w-full pl-8 pr-3 py-2 rounded-md
                 bg-card border border-mist-light
@@ -226,7 +220,10 @@ export function DataTablePage() {
           <div className="flex items-center gap-3 flex-wrap">
             <select
               value={platformFilter}
-              onChange={(e) => setPlatformFilter(e.target.value)}
+              onChange={(e) => {
+                setPlatformFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="bg-transparent border-none text-[13px] font-medium text-forest focus:ring-0 cursor-pointer hover:text-sage-dark transition-colors p-0"
             >
               <option value="All">Platform: All</option>
@@ -239,7 +236,10 @@ export function DataTablePage() {
 
             <select
               value={interactionFilter}
-              onChange={(e) => setInteractionFilter(e.target.value)}
+              onChange={(e) => {
+                setInteractionFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="bg-transparent border-none text-[13px] font-medium text-forest focus:ring-0 cursor-pointer hover:text-sage-dark transition-colors p-0"
             >
               <option value="All">Interaction: All</option>
@@ -252,7 +252,10 @@ export function DataTablePage() {
 
             <select
               value={depressionFilter}
-              onChange={(e) => setDepressionFilter(e.target.value)}
+              onChange={(e) => {
+                setDepressionFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="bg-transparent border-none text-[13px] font-medium text-forest focus:ring-0 cursor-pointer hover:text-sage-dark transition-colors p-0"
             >
               <option value="All">Depression: All</option>
@@ -264,7 +267,10 @@ export function DataTablePage() {
 
             <select
               value={usageFilter}
-              onChange={(e) => setUsageFilter(e.target.value)}
+              onChange={(e) => {
+                setUsageFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="bg-transparent border-none text-[13px] font-medium text-forest focus:ring-0 cursor-pointer hover:text-sage-dark transition-colors p-0"
             >
               <option value="All">Usage: All</option>
@@ -283,6 +289,7 @@ export function DataTablePage() {
                 setInteractionFilter('All');
                 setDepressionFilter('All');
                 setUsageFilter('All');
+                setCurrentPage(1);
               }}
               className="
                 p-2.5 rounded-md border border-mist-light bg-card
@@ -390,13 +397,13 @@ export function DataTablePage() {
       {!loading && !error && filtered.length > 0 && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="font-body text-xs text-text-muted">
-            Page {currentPage} of {totalPages}
+            Page {activePage} of {totalPages}
           </p>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              disabled={currentPage === 1}
+              disabled={activePage === 1}
               className="
                 px-3 py-2 rounded-md border border-mist-light bg-card
                 text-sm text-forest disabled:text-text-muted disabled:opacity-50
@@ -407,8 +414,8 @@ export function DataTablePage() {
             </button>
             <button
               type="button"
-              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(Math.min(totalPages, activePage + 1))}
+              disabled={activePage === totalPages}
               className="
                 px-3 py-2 rounded-md border border-mist-light bg-card
                 text-sm text-forest disabled:text-text-muted disabled:opacity-50
