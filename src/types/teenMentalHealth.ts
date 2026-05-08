@@ -36,3 +36,15 @@ export type DataTableRow = Pick<
   | 'platform_usage'
   | 'depression_label'
 >;
+
+export type DashboardKpiRow =
+  Database['public']['Functions']['get_dashboard_kpis']['Returns'][number];
+
+export type PlatformAddictionSummaryRow =
+  Database['public']['Functions']['get_platform_addiction_summary']['Returns'][number];
+
+export type InteractionDepressionSummaryRow =
+  Database['public']['Functions']['get_interaction_depression_summary']['Returns'][number];
+
+export type UsageDepressionSummaryRow =
+  Database['public']['Functions']['get_usage_depression_summary']['Returns'][number];

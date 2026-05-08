@@ -6,21 +6,78 @@ Scope: React/Vite frontend, Supabase client usage, dataset cleaning/upload scrip
 
 ## Executive Summary
 
-The app builds successfully, but it is not currently passing its configured lint gate. The main best-practice gaps are weak TypeScript boundaries around chart/data code, duplicated Supabase aggregation logic, no automated tests, no declared Python dependency file, and client-side fetching/export patterns that will not scale safely if the dataset grows or contains sensitive records.
+The app now builds successfully and passes lint. The main remaining best-practice gaps are duplicated Supabase aggregation logic, no automated tests, no declared Python dependency file, partial client-side aggregation for dashboard/insight data, and runtime/privacy hardening work.
 
 This project is usable as a school/demo dashboard, but it should not be treated as production-ready until the high-priority findings below are fixed.
+
+## Task Board
+
+Use this section as the working tracker for what is done, what is partially done, and what should be tackled next.
+
+- [x] Task 1: Fix lint failures
+  `npm run lint` passes after typing/chart and pagination-state fixes.
+- [x] Task 2: Add typed Supabase schema and shared row types
+  Implemented in `src/types/` and wired into the Supabase client/pages.
+- [ ] Task 3: Complete server-side data fetching for the whole app
+  `DataTablePage` is server-driven now, but `DashboardPage` and `InsightPage` still aggregate in the browser.
+- [ ] Task 4: Document privacy and RLS boundaries
+  Still needed before using non-demo or sensitive data.
+- [ ] Task 5: Extract shared analytics module
+  Dashboard and insight logic is still duplicated.
+- [ ] Task 6: Add automated frontend and Python tests
+  No test runner or test files yet.
+- [ ] Task 7: Add Python dependency declaration
+  `requirements.txt` or `pyproject.toml` is still missing.
+- [ ] Task 8: Make dataset uploads idempotent
+  Re-running uploads can still duplicate rows.
+- [ ] Task 9: Reduce production bundle size
+  Bundle is still large and `xlsx` is still imported in the route.
+- [ ] Task 10: Clean encoding artifacts in UI strings
+  Text corruption still exists in a few files.
+- [ ] Task 11: Remove or formalize hardcoded demo UI values
+  Topbar and sidebar still contain placeholders.
+- [ ] Task 12: Improve runtime error handling
+  Missing env/data failures still need better user-facing handling.
+
+## What Is Solved
+
+- `npm run lint` now passes.
+- Supabase client typing is in place with shared row aliases.
+- `DataTablePage` no longer fetches the full dataset just to paginate/filter in the browser.
+- `DataTablePage` now uses server-side pagination, sorting, filtering, and export queries.
+- Interaction filter case mismatch was fixed.
+- Toolbar clear-button flicker/layout shift was fixed.
+
+## Next Recommended Task
+
+The next highest-value task is:
+
+`Task 3: complete the remaining server-side data work for DashboardPage and InsightPage`
+
+Why this should be next:
+
+- it closes the unfinished part of a high-priority audit item
+- it removes unnecessary raw-row fetching from the dashboard paths
+- it improves scalability and reduces data exposure
+
+Concrete next step:
+
+- create Supabase views or RPC functions for dashboard KPIs and insight aggregates
+- update `DashboardPage.tsx` and `InsightPage.tsx` to consume summarized results instead of full-row datasets
 
 ## Verification Results
 
 | Check | Result | Notes |
 | --- | --- | --- |
-| `npm run build` | Passed | Production bundle generated successfully. Vite warns the main JS chunk is large: `981.34 kB` minified, `306.20 kB` gzip. |
-| `npm run lint` | Failed | 9 ESLint errors: explicit `any` usage in `DashboardPage.tsx`, and React Hooks `set-state-in-effect` violations in `DataTablePage.tsx`. |
+| `npm run build` | Passed | Production bundle generates successfully. Vite still warns that the main JS chunk is large. |
+| `npm run lint` | Passed | The previous explicit `any` and React Hooks lint failures have been fixed. |
 | `npm audit --omit=dev` | Passed | No production dependency vulnerabilities reported locally. |
 
 ## High Priority Findings
 
 ### 1. Lint currently fails
+
+Status: Done
 
 Evidence:
 
@@ -39,6 +96,8 @@ Suggested fix:
 
 ### 2. Supabase data shape is not typed
 
+Status: Done
+
 Evidence:
 
 - `src/lib/supabase.ts:10` creates an untyped Supabase client.
@@ -56,6 +115,8 @@ Suggested fix:
 
 ### 3. Frontend fetches full table data and calculates aggregates in the browser
 
+Status: Partial
+
 Evidence:
 
 - `src/pages/DashboardPage.tsx:73` selects all rows needed for KPIs and chart aggregations.
@@ -72,7 +133,14 @@ Suggested fix:
 - Use server-side pagination, sorting, and filtering for the table via `.range()`, `.order()`, and query filters.
 - Restrict exported fields to non-sensitive columns and require explicit user intent if this will ever contain real student data.
 
+Progress:
+
+- `DataTablePage` now uses server-side pagination, sorting, filtering, and export queries.
+- `DashboardPage` and `InsightPage` still need aggregate views or RPC functions to fully close this item.
+
 ### 4. Data access and privacy rules are not documented or enforced in code
+
+Status: Pending
 
 Evidence:
 
@@ -94,6 +162,8 @@ Suggested fix:
 
 ### 5. Aggregation logic is duplicated across dashboard and insight pages
 
+Status: Pending
+
 Evidence:
 
 - Platform, interaction, and hourly depression calculations are implemented in both `DashboardPage.tsx` and `InsightPage.tsx`.
@@ -108,6 +178,8 @@ Suggested fix:
 - Add unit tests for those pure functions.
 
 ### 6. No automated test setup exists
+
+Status: Pending
 
 Evidence:
 
@@ -125,6 +197,8 @@ Suggested fix:
 - Add pytest for `dataset/cleaning.py`, especially missing-value handling, normalization, and IQR filtering.
 
 ### 7. Python dependencies are documented but not declared
+
+Status: Pending
 
 Evidence:
 
@@ -145,6 +219,8 @@ Suggested fix:
 
 ### 8. Upload pipeline can duplicate data
 
+Status: Pending
+
 Evidence:
 
 - README notes rerunning uploads may insert duplicate logical rows.
@@ -161,6 +237,8 @@ Suggested fix:
 - Include row-count validation after upload.
 
 ### 9. Production bundle is large
+
+Status: Pending
 
 Evidence:
 
@@ -181,6 +259,8 @@ Suggested fix:
 
 ### 10. Some UI strings show encoding artifacts
 
+Status: Pending
+
 Evidence:
 
 - `src/pages/DashboardPage.tsx` comments render `â€”`.
@@ -197,6 +277,8 @@ Suggested fix:
 
 ### 11. Hardcoded demo-only UI values are mixed into application chrome
 
+Status: Pending
+
 Evidence:
 
 - `src/components/Topbar.tsx` hardcodes weather and avatar values.
@@ -211,6 +293,8 @@ Suggested fix:
 - Move these values into a config object, remove them, or clearly label them as demo placeholders.
 
 ### 12. Runtime error handling is minimal
+
+Status: Pending
 
 Evidence:
 
@@ -230,12 +314,12 @@ Suggested fix:
 ## Recommended Fix Order
 
 1. Fix the lint errors so `npm run lint` passes.
-2. Add typed Supabase schema support and shared row types.
-3. Extract duplicated analytics calculations into a tested utility module.
-4. Add frontend unit tests for analytics and table behavior.
-5. Add Python dependency declaration and pytest coverage for cleaning.
-6. Move dashboard/table aggregations and pagination closer to Supabase.
-7. Add RLS/privacy documentation before using non-demo data.
+2. Complete the remaining server-side aggregate work for dashboard and insight pages.
+3. Add RLS/privacy documentation before using non-demo data.
+4. Extract duplicated analytics calculations into a tested utility module.
+5. Add frontend unit tests for analytics and table behavior.
+6. Add Python dependency declaration and pytest coverage for cleaning.
+7. Make uploads idempotent.
 8. Code-split `xlsx`, chart-heavy routes, and large page modules.
 
 ## Suggested CI Gate

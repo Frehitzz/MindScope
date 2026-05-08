@@ -19,32 +19,17 @@ import {
 import { Bar, Line, Scatter } from 'react-chartjs-2';
 import { Activity, HeartPulse, Moon, Smartphone, HeartHandshake, TrendingUp } from 'lucide-react';
 
-import { supabase } from '../lib/supabase';
+import {
+  fetchDashboardAggregateData,
+  type DashboardStat as Stat,
+  type InteractionData,
+  type PlatformData,
+} from '../lib/dashboardAggregates';
 
 import { StatCard } from '../components/StatCard';
 import { SectionHeader } from '../components/SectionHeader';
 import { ChartCard } from '../components/ChartCard';
 import { CHART_COLORS } from '../constants/chartColors';
-import type { DashboardMetricRow } from '../types/teenMentalHealth';
-
-type Stat = {
-  label: string;
-  value: string;
-  delta: string;
-  deltaPositive: boolean;
-};
-
-type PlatformData = {
-  labels: string[];
-  addiction: number[];
-  max: number[];
-  min: number[];
-};
-
-type InteractionData = {
-  labels: string[];
-  values: number[];
-};
 
 type LollipopStemPluginOptions = {
   enabled?: boolean;
@@ -107,91 +92,11 @@ export function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const { data, error } = await supabase
-          .from('teen_mental_health_cleaned')
-          .select('stress_level, anxiety_level, sleep_hours, daily_social_media_hours, platform_usage, addiction_level, social_interaction_level, depression_label');
-
-        if (error) throw error;
-
-        const rows: DashboardMetricRow[] = data ?? [];
-
-        if (rows.length > 0) {
-          const totalRows = rows.length;
-          const sumStress = rows.reduce((acc, row) => acc + (row.stress_level || 0), 0);
-          const sumAnxiety = rows.reduce((acc, row) => acc + (row.anxiety_level || 0), 0);
-          const sumSleep = rows.reduce((acc, row) => acc + (row.sleep_hours || 0), 0);
-          const sumSocial = rows.reduce((acc, row) => acc + (row.daily_social_media_hours || 0), 0);
-
-          const maxStress = Math.max(...rows.map(d => d.stress_level || 0));
-          const maxAnxiety = Math.max(...rows.map(d => d.anxiety_level || 0));
-          const minSleep = Math.min(...rows.map(d => d.sleep_hours || 0)).toFixed(1);
-          const maxSleep = Math.max(...rows.map(d => d.sleep_hours || 0)).toFixed(1);
-          const maxSocial = Math.max(...rows.map(d => d.daily_social_media_hours || 0)).toFixed(1);
-
-          setStats([
-            { label: 'Avg Stress Level', value: (sumStress / totalRows).toFixed(1), delta: `Max recorded: ${maxStress}`, deltaPositive: true },
-            { label: 'Avg Anxiety Level', value: (sumAnxiety / totalRows).toFixed(1), delta: `Max recorded: ${maxAnxiety}`, deltaPositive: true },
-            { label: 'Avg Sleep Hours', value: (sumSleep / totalRows).toFixed(1) + 'h', delta: `Range: ${minSleep}h - ${maxSleep}h`, deltaPositive: true },
-            { label: 'Daily Social Media', value: (sumSocial / totalRows).toFixed(1) + 'h', delta: `Max: ${maxSocial}h/day`, deltaPositive: true },
-          ]);
-
-          // Calculate averages grouped by platform for the bar chart
-          const groupedByPlatform = rows.reduce((acc, row) => {
-            const platformStr = row.platform_usage ? String(row.platform_usage).trim() : 'Unknown';
-            const formattedPlatform = platformStr.charAt(0).toUpperCase() + platformStr.slice(1).toLowerCase();
-
-            const addiction = row.addiction_level || 0;
-            if (!acc[formattedPlatform]) acc[formattedPlatform] = { count: 0, sumAddiction: 0, max: -Infinity, min: Infinity };
-            acc[formattedPlatform].count++;
-            acc[formattedPlatform].sumAddiction += addiction;
-            if (addiction > acc[formattedPlatform].max) acc[formattedPlatform].max = addiction;
-            if (addiction < acc[formattedPlatform].min) acc[formattedPlatform].min = addiction;
-            return acc;
-          }, {} as Record<string, { count: number, sumAddiction: number, max: number, min: number }>);
-
-          const labels = Object.keys(groupedByPlatform);
-          const addictionAverages = labels.map(p => Number((groupedByPlatform[p].sumAddiction / groupedByPlatform[p].count).toFixed(1)));
-          const maxAddictions = labels.map(p => groupedByPlatform[p].max);
-          const minAddictions = labels.map(p => groupedByPlatform[p].min);
-
-          setPlatformData({ labels, addiction: addictionAverages, max: maxAddictions, min: minAddictions });
-
-          // Calculate depression rate grouped by social interaction level
-          const groupedByInteraction = rows.reduce((acc, row) => {
-            const levelStr = row.social_interaction_level ? String(row.social_interaction_level).trim().toLowerCase() : 'unknown';
-            const formattedLevel = levelStr.charAt(0).toUpperCase() + levelStr.slice(1);
-
-            if (!acc[formattedLevel]) acc[formattedLevel] = { count: 0, sumDepression: 0 };
-            acc[formattedLevel].count++;
-            acc[formattedLevel].sumDepression += (row.depression_label || 0);
-            return acc;
-          }, {} as Record<string, { count: number, sumDepression: number }>);
-
-          const interactionLabels = Object.keys(groupedByInteraction);
-          const depressionRates = interactionLabels.map(l =>
-            ((groupedByInteraction[l].sumDepression / groupedByInteraction[l].count) * 100).toFixed(1)
-          );
-
-          setInteractionData({ labels: interactionLabels, values: depressionRates.map(Number) });
-
-          // Calculate scatter points: Usage Hours (X) vs Depression Rate (Y)
-          const groupedByHours = rows.reduce((acc, row) => {
-            const hours = Math.round(row.daily_social_media_hours || 0);
-            if (!acc[hours]) acc[hours] = { count: 0, sumDepression: 0 };
-            acc[hours].count++;
-            acc[hours].sumDepression += (row.depression_label || 0);
-            return acc;
-          }, {} as Record<number, { count: number, sumDepression: number }>);
-
-          const scatterPoints = Object.keys(groupedByHours).map(h => ({
-            x: Number(h),
-            y: Number(((groupedByHours[Number(h)].sumDepression / groupedByHours[Number(h)].count) * 100).toFixed(1))
-          })).sort((a, b) => a.x - b.x);
-
-          setScatterData(scatterPoints);
-        } else {
-          console.warn('No data found in teen_mental_health_cleaned table.');
-        }
+        const aggregateData = await fetchDashboardAggregateData();
+        setStats(aggregateData.stats);
+        setPlatformData(aggregateData.platformData);
+        setInteractionData(aggregateData.interactionData);
+        setScatterData(aggregateData.scatterData);
       } catch (err) {
         console.error('Error fetching Supabase data:', err);
         // Fallback to mock data if fetch fails (e.g., if .env is missing)

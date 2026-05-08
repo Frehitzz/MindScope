@@ -1,27 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Smartphone, HeartHandshake, TrendingUp } from 'lucide-react';
 
-import { supabase } from '../lib/supabase';
+import {
+  fetchDashboardAggregateData,
+  type InteractionData,
+  type PlatformData,
+  type ScatterPoint,
+} from '../lib/dashboardAggregates';
 import { ChartCard } from '../components/ChartCard';
 import { SectionHeader } from '../components/SectionHeader';
-import type { InsightMetricRow } from '../types/teenMentalHealth';
-
-interface PlatformData {
-  labels: string[];
-  addiction: number[];
-  max: number[];
-  min: number[];
-}
-
-interface InteractionData {
-  labels: string[];
-  values: number[];
-}
-
-interface ScatterPoint {
-  x: number;
-  y: number;
-}
 
 function buildPlatformInsight(data: PlatformData) {
   if (!data.labels.length) {
@@ -102,73 +89,10 @@ export function InsightPage() {
   useEffect(() => {
     async function fetchInsightData() {
       try {
-        const { data, error } = await supabase
-          .from('teen_mental_health_cleaned')
-          .select('platform_usage, addiction_level, social_interaction_level, depression_label, daily_social_media_hours');
-
-        if (error) throw error;
-
-        const rows: InsightMetricRow[] = data ?? [];
-        if (!rows.length) return;
-
-        const groupedByPlatform = rows.reduce((acc, row) => {
-          const platformStr = row.platform_usage ? String(row.platform_usage).trim() : 'Unknown';
-          const formattedPlatform = platformStr.charAt(0).toUpperCase() + platformStr.slice(1).toLowerCase();
-          const addiction = row.addiction_level || 0;
-
-          if (!acc[formattedPlatform]) {
-            acc[formattedPlatform] = { count: 0, sumAddiction: 0, max: -Infinity, min: Infinity };
-          }
-
-          acc[formattedPlatform].count++;
-          acc[formattedPlatform].sumAddiction += addiction;
-          if (addiction > acc[formattedPlatform].max) acc[formattedPlatform].max = addiction;
-          if (addiction < acc[formattedPlatform].min) acc[formattedPlatform].min = addiction;
-          return acc;
-        }, {} as Record<string, { count: number, sumAddiction: number, max: number, min: number }>);
-
-        const platformLabels = Object.keys(groupedByPlatform);
-        setPlatformData({
-          labels: platformLabels,
-          addiction: platformLabels.map((label) => Number((groupedByPlatform[label].sumAddiction / groupedByPlatform[label].count).toFixed(1))),
-          max: platformLabels.map((label) => groupedByPlatform[label].max),
-          min: platformLabels.map((label) => groupedByPlatform[label].min),
-        });
-
-        const groupedByInteraction = rows.reduce((acc, row) => {
-          const levelStr = row.social_interaction_level ? String(row.social_interaction_level).trim().toLowerCase() : 'unknown';
-          const formattedLevel = levelStr.charAt(0).toUpperCase() + levelStr.slice(1);
-
-          if (!acc[formattedLevel]) acc[formattedLevel] = { count: 0, sumDepression: 0 };
-          acc[formattedLevel].count++;
-          acc[formattedLevel].sumDepression += row.depression_label || 0;
-          return acc;
-        }, {} as Record<string, { count: number, sumDepression: number }>);
-
-        const interactionLabels = Object.keys(groupedByInteraction);
-        setInteractionData({
-          labels: interactionLabels,
-          values: interactionLabels.map((label) =>
-            Number(((groupedByInteraction[label].sumDepression / groupedByInteraction[label].count) * 100).toFixed(1))
-          ),
-        });
-
-        const groupedByHours = rows.reduce((acc, row) => {
-          const hours = Math.round(row.daily_social_media_hours || 0);
-          if (!acc[hours]) acc[hours] = { count: 0, sumDepression: 0 };
-          acc[hours].count++;
-          acc[hours].sumDepression += row.depression_label || 0;
-          return acc;
-        }, {} as Record<number, { count: number, sumDepression: number }>);
-
-        const points = Object.keys(groupedByHours)
-          .map((hour) => ({
-            x: Number(hour),
-            y: Number(((groupedByHours[Number(hour)].sumDepression / groupedByHours[Number(hour)].count) * 100).toFixed(1)),
-          }))
-          .sort((a, b) => a.x - b.x);
-
-        setScatterData(points);
+        const aggregateData = await fetchDashboardAggregateData();
+        setPlatformData(aggregateData.platformData);
+        setInteractionData(aggregateData.interactionData);
+        setScatterData(aggregateData.scatterData);
       } catch (error) {
         console.error('Error fetching insight data:', error);
       } finally {
