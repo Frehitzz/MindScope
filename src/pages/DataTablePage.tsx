@@ -3,17 +3,9 @@ import { ArrowUpDown, Search, X, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SectionHeader } from '../components/SectionHeader';
 import { supabase } from '../lib/supabase';
+import type { DataTableRow } from '../types/teenMentalHealth';
 
-type TableRow = {
-  id: number;
-  gender: string | null;
-  social_interaction_level: string | null;
-  daily_social_media_hours: number | null;
-  platform_usage: string | null;
-  depression_label: number | null;
-};
-
-type SortField = keyof TableRow;
+type SortField = keyof DataTableRow;
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
@@ -28,7 +20,7 @@ const columns: { key: SortField; label: string }[] = [
 ];
 
 export function DataTablePage() {
-  const [rows, setRows] = useState<TableRow[]>([]);
+  const [rows, setRows] = useState<DataTableRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -59,7 +51,7 @@ export function DataTablePage() {
         setError('Could not load records from Supabase.');
         setRows([]);
       } else {
-        setRows((data ?? []) as TableRow[]);
+        setRows(data ?? []);
       }
 
       setLoading(false);

@@ -25,17 +25,7 @@ import { StatCard } from '../components/StatCard';
 import { SectionHeader } from '../components/SectionHeader';
 import { ChartCard } from '../components/ChartCard';
 import { CHART_COLORS } from '../constants/chartColors';
-
-type DashboardRow = {
-  stress_level: number | null;
-  anxiety_level: number | null;
-  sleep_hours: number | null;
-  daily_social_media_hours: number | null;
-  platform_usage: string | null;
-  addiction_level: number | null;
-  social_interaction_level: string | null;
-  depression_label: number | null;
-};
+import type { DashboardMetricRow } from '../types/teenMentalHealth';
 
 type Stat = {
   label: string;
@@ -123,7 +113,7 @@ export function DashboardPage() {
 
         if (error) throw error;
 
-        const rows = (data ?? []) as DashboardRow[];
+        const rows: DashboardMetricRow[] = data ?? [];
 
         if (rows.length > 0) {
           const totalRows = rows.length;

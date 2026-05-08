@@ -4,6 +4,7 @@ import { Smartphone, HeartHandshake, TrendingUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ChartCard } from '../components/ChartCard';
 import { SectionHeader } from '../components/SectionHeader';
+import type { InsightMetricRow } from '../types/teenMentalHealth';
 
 interface PlatformData {
   labels: string[];
@@ -106,9 +107,11 @@ export function InsightPage() {
           .select('platform_usage, addiction_level, social_interaction_level, depression_label, daily_social_media_hours');
 
         if (error) throw error;
-        if (!data?.length) return;
 
-        const groupedByPlatform = data.reduce((acc, row) => {
+        const rows: InsightMetricRow[] = data ?? [];
+        if (!rows.length) return;
+
+        const groupedByPlatform = rows.reduce((acc, row) => {
           const platformStr = row.platform_usage ? String(row.platform_usage).trim() : 'Unknown';
           const formattedPlatform = platformStr.charAt(0).toUpperCase() + platformStr.slice(1).toLowerCase();
           const addiction = row.addiction_level || 0;
@@ -132,7 +135,7 @@ export function InsightPage() {
           min: platformLabels.map((label) => groupedByPlatform[label].min),
         });
 
-        const groupedByInteraction = data.reduce((acc, row) => {
+        const groupedByInteraction = rows.reduce((acc, row) => {
           const levelStr = row.social_interaction_level ? String(row.social_interaction_level).trim().toLowerCase() : 'unknown';
           const formattedLevel = levelStr.charAt(0).toUpperCase() + levelStr.slice(1);
 
@@ -150,7 +153,7 @@ export function InsightPage() {
           ),
         });
 
-        const groupedByHours = data.reduce((acc, row) => {
+        const groupedByHours = rows.reduce((acc, row) => {
           const hours = Math.round(row.daily_social_media_hours || 0);
           if (!acc[hours]) acc[hours] = { count: 0, sumDepression: 0 };
           acc[hours].count++;
