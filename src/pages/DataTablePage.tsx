@@ -80,6 +80,7 @@ const columns: { key: SortField; label: string }[] = [
 
 const DATA_TABLE_SELECT =
   'id, gender, social_interaction_level, daily_social_media_hours, platform_usage, depression_label';
+const DATA_TABLE_SOURCE = 'public_teen_mental_health_table';
 
 export function DataTablePage() {
   const [rows, setRows] = useState<DataTableRow[]>([]);
@@ -109,7 +110,7 @@ export function DataTablePage() {
       const normalizedSearch = trimmedSearch.toLowerCase();
       const numericSearch = Number(trimmedSearch);
       let query = supabase
-        .from('teen_mental_health_cleaned')
+        .from(DATA_TABLE_SOURCE)
         .select(DATA_TABLE_SELECT, { count: 'exact' })
         .order(sortField, { ascending: sortDir === 'asc' })
         .range(rangeStart, rangeEnd);
@@ -227,7 +228,7 @@ export function DataTablePage() {
     const normalizedSearch = trimmedSearch.toLowerCase();
     const numericSearch = Number(trimmedSearch);
     let exportQuery = supabase
-      .from('teen_mental_health_cleaned')
+      .from(DATA_TABLE_SOURCE)
       .select(DATA_TABLE_SELECT)
       .order(sortField, { ascending: sortDir === 'asc' });
 

@@ -19,12 +19,8 @@ import {
 import { Bar, Line, Scatter } from 'react-chartjs-2';
 import { Activity, HeartPulse, Moon, Smartphone, HeartHandshake, TrendingUp } from 'lucide-react';
 
-import {
-  fetchDashboardAggregateData,
-  type DashboardStat as Stat,
-  type InteractionData,
-  type PlatformData,
-} from '../lib/dashboardAggregates';
+import { fetchDashboardAggregateData } from '../lib/dashboardAggregates';
+import type { DashboardStat as Stat, InteractionData, PlatformData } from '../lib/analytics';
 
 import { StatCard } from '../components/StatCard';
 import { SectionHeader } from '../components/SectionHeader';

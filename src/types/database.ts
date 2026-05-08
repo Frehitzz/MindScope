@@ -154,44 +154,56 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      public_teen_mental_health_table: {
+        Row: {
+          id: number | null;
+          gender: string | null;
+          social_interaction_level: string | null;
+          daily_social_media_hours: number | null;
+          platform_usage: string | null;
+          depression_label: number | null;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       get_dashboard_kpis: {
         Args: Record<PropertyKey, never>;
         Returns: {
           total_rows: number;
-          avg_stress_level: number;
-          max_stress_level: number;
-          avg_anxiety_level: number;
-          max_anxiety_level: number;
-          avg_sleep_hours: number;
-          min_sleep_hours: number;
-          max_sleep_hours: number;
-          avg_daily_social_media_hours: number;
-          max_daily_social_media_hours: number;
+          avg_stress_level: number | null;
+          max_stress_level: number | null;
+          avg_anxiety_level: number | null;
+          max_anxiety_level: number | null;
+          avg_sleep_hours: number | null;
+          min_sleep_hours: number | null;
+          max_sleep_hours: number | null;
+          avg_daily_social_media_hours: number | null;
+          max_daily_social_media_hours: number | null;
         }[];
       };
       get_platform_addiction_summary: {
         Args: Record<PropertyKey, never>;
         Returns: {
-          platform: string;
-          avg_addiction_level: number;
-          max_addiction_level: number;
-          min_addiction_level: number;
+          platform: string | null;
+          avg_addiction_level: number | null;
+          max_addiction_level: number | null;
+          min_addiction_level: number | null;
         }[];
       };
       get_interaction_depression_summary: {
         Args: Record<PropertyKey, never>;
         Returns: {
-          interaction_group: string;
-          depression_rate_pct: number;
+          interaction_group: string | null;
+          depression_rate_pct: number | null;
         }[];
       };
       get_usage_depression_summary: {
         Args: Record<PropertyKey, never>;
         Returns: {
-          rounded_usage_hours: number;
-          depression_rate_pct: number;
+          rounded_usage_hours: number | null;
+          depression_rate_pct: number | null;
         }[];
       };
     };

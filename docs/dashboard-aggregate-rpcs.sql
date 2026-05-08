@@ -14,6 +14,8 @@ returns table (
 )
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select
     count(*) as total_rows,
@@ -39,6 +41,8 @@ returns table (
 )
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select
     initcap(trim(coalesce(platform_usage, 'Unknown'))) as platform,
@@ -58,6 +62,8 @@ returns table (
 )
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select
     initcap(trim(coalesce(social_interaction_level, 'Unknown'))) as interaction_group,
@@ -75,6 +81,8 @@ returns table (
 )
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select
     round(coalesce(daily_social_media_hours, 0))::integer as rounded_usage_hours,
@@ -83,3 +91,8 @@ as $$
   group by round(coalesce(daily_social_media_hours, 0))::integer
   order by rounded_usage_hours asc;
 $$;
+
+grant execute on function public.get_dashboard_kpis() to anon;
+grant execute on function public.get_platform_addiction_summary() to anon;
+grant execute on function public.get_interaction_depression_summary() to anon;
+grant execute on function public.get_usage_depression_summary() to anon;

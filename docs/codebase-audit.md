@@ -6,7 +6,7 @@ Scope: React/Vite frontend, Supabase client usage, dataset cleaning/upload scrip
 
 ## Executive Summary
 
-The app now builds successfully and passes lint. The main remaining best-practice gaps are missing automated tests, no declared Python dependency file, row-level privacy hardening for the public data table path, duplicated summary/insight logic, and runtime hardening work.
+The app now builds successfully and passes lint. The main remaining best-practice gaps are missing automated tests, no declared Python dependency file, row-level privacy hardening for the public data table path, bundle/runtime hardening work, and dataset pipeline resilience.
 
 This project is usable as a school/demo dashboard, but it should not be treated as production-ready until the high-priority findings below are fixed.
 
@@ -22,8 +22,8 @@ Use this section as the working tracker for what is done, what is partially done
   `DataTablePage` is server-driven now, and `DashboardPage`/`InsightPage` now consume aggregate RPCs instead of raw-row datasets.
 - [x] Task 4: Document privacy and RLS boundaries
   Added [docs/privacy-and-rls-boundaries.md](/C:/Mycodes/MindScope/docs/privacy-and-rls-boundaries.md:1) and a safe `.env.example` for frontend setup.
-- [ ] Task 5: Extract shared analytics module
-  Dashboard and insight logic is still duplicated.
+- [x] Task 5: Extract shared analytics module
+  Shared aggregate/result-shaping and insight-summary logic now lives in `src/lib/analytics.ts`.
 - [ ] Task 6: Add automated frontend and Python tests
   No test runner or test files yet.
 - [ ] Task 7: Add Python dependency declaration
@@ -54,18 +54,18 @@ Use this section as the working tracker for what is done, what is partially done
 
 The next highest-value task is:
 
-`Task 5: extract the remaining shared analytics/module boundaries and add tests`
+`Task 6: add automated frontend and Python tests`
 
 Why this should be next:
 
-- task 3 and task 4 are now documented and implemented at the data-boundary level
-- the next remaining risk is duplicated analytics logic and missing tests
-- it improves maintainability before more features are added
+- the shared analytics/module boundary is now in place
+- the next major risk is untested data mapping and UI behavior
+- tests provide the best return on effort before more refactors
 
 Concrete next step:
 
-- extract the shared aggregate formatting or analytics helpers into a narrower reusable module
 - add tests around aggregate result mapping and table/query behavior
+- add pytest coverage for the dataset cleaning pipeline
 
 ## Verification Results
 
@@ -163,20 +163,22 @@ Implemented documentation:
 
 ### 5. Aggregation logic is duplicated across dashboard and insight pages
 
-Status: Pending
+Status: Done
 
 Evidence:
 
-- Platform, interaction, and hourly depression calculations are implemented in both `DashboardPage.tsx` and `InsightPage.tsx`.
+- Shared aggregate/result-shaping helpers now live in `src/lib/analytics.ts`.
+- `src/lib/dashboardAggregates.ts` now acts as a thin Supabase fetch layer.
+- `InsightPage.tsx` now consumes shared insight-summary helpers instead of page-local ranking logic.
 
 Impact:
 
-Any formula change must be made in multiple places. This increases the chance that charts and insight summaries drift apart.
+This reduces drift risk between dashboard data mapping and insight summaries, and gives the codebase a cleaner place to test future analytics changes.
 
-Suggested fix:
+Implemented fix:
 
-- Extract a shared `src/lib/analytics.ts` module with pure functions such as `groupAddictionByPlatform`, `groupDepressionByInteraction`, and `groupDepressionByUsageHour`.
-- Add unit tests for those pure functions.
+- Added `src/lib/analytics.ts` with shared pure helpers for KPI formatting, platform grouping, interaction grouping, usage-hour grouping, and insight summary generation.
+- Updated dashboard and insight consumers to use the shared module.
 
 ### 6. No automated test setup exists
 
@@ -314,12 +316,11 @@ Suggested fix:
 
 ## Recommended Fix Order
 
-1. Extract duplicated analytics calculations into a tested utility module.
-2. Add frontend unit tests for analytics and table behavior.
-3. Add Python dependency declaration and pytest coverage for cleaning.
-4. Make uploads idempotent.
-5. Reduce row-level public exposure in `DataTablePage` if the project moves beyond demo data.
-6. Code-split `xlsx`, chart-heavy routes, and large page modules.
+1. Add frontend unit tests for analytics and table behavior.
+2. Add Python dependency declaration and pytest coverage for cleaning.
+3. Make uploads idempotent.
+4. Reduce row-level public exposure in `DataTablePage` if the project moves beyond demo data.
+5. Code-split `xlsx`, chart-heavy routes, and large page modules.
 
 ## Suggested CI Gate
 

@@ -1,84 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Smartphone, HeartHandshake, TrendingUp } from 'lucide-react';
 
+import { fetchDashboardAggregateData } from '../lib/dashboardAggregates';
 import {
-  fetchDashboardAggregateData,
+  buildInteractionInsight,
+  buildPlatformInsight,
+  buildUsageInsight,
   type InteractionData,
   type PlatformData,
   type ScatterPoint,
-} from '../lib/dashboardAggregates';
+} from '../lib/analytics';
 import { ChartCard } from '../components/ChartCard';
 import { SectionHeader } from '../components/SectionHeader';
-
-function buildPlatformInsight(data: PlatformData) {
-  if (!data.labels.length) {
-    return {
-      title: 'Addiction Level by Platform',
-      summary: 'Platform-level addiction insight will appear once data is available.',
-    };
-  }
-
-  const ranked = data.labels
-    .map((label, index) => ({
-      label,
-      avg: data.addiction[index],
-      max: data.max[index],
-      min: data.min[index],
-    }))
-    .sort((a, b) => b.avg - a.avg);
-
-  const leader = ranked[0];
-  const runnerUp = ranked[1];
-
-  return {
-    title: 'Addiction Level by Platform',
-    summary: `${leader.label} has the highest average addiction level at ${leader.avg.toFixed(1)}, with reported scores ranging from ${leader.min} to ${leader.max}. ${runnerUp ? `It stays ahead of ${runnerUp.label} at ${runnerUp.avg.toFixed(1)}, making it the strongest platform signal in this dataset.` : 'It stands out as the leading platform in this dataset.'}`,
-  };
-}
-
-function buildInteractionInsight(data: InteractionData) {
-  if (!data.labels.length) {
-    return {
-      title: 'Depression Rate by Interaction Group',
-      summary: 'Interaction-based depression insight will appear once data is available.',
-    };
-  }
-
-  const ranked = data.labels
-    .map((label, index) => ({
-      label,
-      value: data.values[index],
-    }))
-    .sort((a, b) => b.value - a.value);
-
-  const highest = ranked[0];
-  const lowest = ranked[ranked.length - 1];
-
-  return {
-    title: 'Depression Rate by Interaction Group',
-    summary: `${highest.label} social interaction shows the highest depression rate at ${highest.value.toFixed(1)}%, while ${lowest.label} is lowest at ${lowest.value.toFixed(1)}%. The spread is relatively small across groups, but ${highest.label} remains the clearest concentration point. This highlights a potential 'Social Fatigue' factor within the student cohort.`,
-  };
-}
-
-function buildUsageInsight(data: ScatterPoint[]) {
-  if (!data.length) {
-    return {
-      title: 'Usage Hours vs. Depression Rate',
-      summary: 'Usage-based depression insight will appear once data is available.',
-    };
-  }
-
-  const peak = data.reduce((highest, point) => (point.y > highest.y ? point : highest), data[0]);
-  const earlyUsage = data.filter((point) => point.x <= 4);
-  const lateUsage = data.filter((point) => point.x >= 5);
-  const earlyMax = earlyUsage.length ? Math.max(...earlyUsage.map((point) => point.y)) : 0;
-  const lateStart = lateUsage[0];
-
-  return {
-    title: 'Usage Hours vs. Depression Rate',
-    summary: `Depression rate stays at or below ${earlyMax.toFixed(1)}% through 4 hours of daily use, then rises to ${lateStart ? `${lateStart.y.toFixed(1)}% at ${lateStart.x} hours` : 'higher levels beyond 4 hours'} and peaks at ${peak.y.toFixed(1)}% at ${peak.x} hours. The pattern is not perfectly smooth hour by hour, but heavier usage clearly aligns with higher depression rates overall. This makes extended daily social media time the strongest risk signal in the chart.`,
-  };
-}
 
 export function InsightPage() {
   const [platformData, setPlatformData] = useState<PlatformData>({ labels: [], addiction: [], max: [], min: [] });

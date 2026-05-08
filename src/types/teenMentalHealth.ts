@@ -28,7 +28,7 @@ export type InsightMetricRow = Pick<
 >;
 
 export type DataTableRow = Pick<
-  TeenMentalHealthCleanedRow,
+  Database['public']['Views']['public_teen_mental_health_table']['Row'],
   | 'id'
   | 'gender'
   | 'social_interaction_level'
