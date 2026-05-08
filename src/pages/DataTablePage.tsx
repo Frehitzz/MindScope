@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowUpDown, Search, X, Download } from 'lucide-react';
+import { useDeferredValue, useEffect, useRef, useState } from 'react';
+import { ArrowUpDown, ChevronDown, Search, X, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SectionHeader } from '../components/SectionHeader';
 import { supabase } from '../lib/supabase';
@@ -7,6 +7,65 @@ import type { DataTableRow } from '../types/teenMentalHealth';
 
 type SortField = keyof DataTableRow;
 type SortDir = 'asc' | 'desc';
+
+// Compact custom filter dropdown — sizes to the displayed value, not the longest option
+function FilterSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const selected = options.find((o) => o.value === value)?.label ?? value;
+
+  return (
+    <div ref={ref} className="relative flex items-center gap-0.5">
+      <span className="text-[13px] text-text-muted whitespace-nowrap">{label}</span>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-0.5 text-[13px] font-medium text-forest hover:text-sage-dark transition-colors cursor-pointer whitespace-nowrap"
+      >
+        {selected}
+        <ChevronDown size={12} className="shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-30 bg-card border border-mist-light rounded-md shadow-card-hover py-1 min-w-max">
+          {options.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => { onChange(o.value); setOpen(false); }}
+              className={`
+                w-full text-left px-3 py-1.5 text-[13px] whitespace-nowrap transition-colors
+                ${o.value === value
+                  ? 'text-forest font-semibold bg-sage/10'
+                  : 'text-text-body hover:bg-cream'}
+              `}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const PAGE_SIZE = 25;
 
@@ -19,9 +78,13 @@ const columns: { key: SortField; label: string }[] = [
   { key: 'depression_label', label: 'Depression Status' },
 ];
 
+const DATA_TABLE_SELECT =
+  'id, gender, social_interaction_level, daily_social_media_hours, platform_usage, depression_label';
+
 export function DataTablePage() {
   const [rows, setRows] = useState<DataTableRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [platformFilter, setPlatformFilter] = useState('All');
@@ -31,6 +94,8 @@ export function DataTablePage() {
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const deferredSearch = useDeferredValue(search);
 
   useEffect(() => {
     let isMounted = true;
@@ -38,11 +103,68 @@ export function DataTablePage() {
     async function fetchRows() {
       setLoading(true);
       setError(null);
-
-      const { data, error: fetchError } = await supabase
+      const rangeStart = (currentPage - 1) * PAGE_SIZE;
+      const rangeEnd = rangeStart + PAGE_SIZE - 1;
+      const trimmedSearch = deferredSearch.trim();
+      const normalizedSearch = trimmedSearch.toLowerCase();
+      const numericSearch = Number(trimmedSearch);
+      let query = supabase
         .from('teen_mental_health_cleaned')
-        .select('id, gender, social_interaction_level, daily_social_media_hours, platform_usage, depression_label')
-        .order('id', { ascending: true });
+        .select(DATA_TABLE_SELECT, { count: 'exact' })
+        .order(sortField, { ascending: sortDir === 'asc' })
+        .range(rangeStart, rangeEnd);
+
+      if (trimmedSearch) {
+        const searchClauses = [
+          `gender.ilike.%${trimmedSearch}%`,
+          `social_interaction_level.ilike.%${trimmedSearch}%`,
+          `platform_usage.ilike.%${trimmedSearch}%`,
+        ];
+
+        if (Number.isInteger(numericSearch)) {
+          searchClauses.push(`id.eq.${numericSearch}`);
+        }
+
+        if (normalizedSearch === 'depressed') {
+          searchClauses.push('depression_label.eq.1');
+        }
+
+        if (normalizedSearch === 'not depressed') {
+          searchClauses.push('depression_label.eq.0');
+        }
+
+        query = query.or(searchClauses.join(','));
+      }
+
+      if (platformFilter !== 'All') {
+        query = query.eq('platform_usage', platformFilter);
+      }
+
+      if (interactionFilter !== 'All') {
+        query = query.eq('social_interaction_level', interactionFilter.toLowerCase());
+      }
+
+      if (depressionFilter === 'Depressed') {
+        query = query.eq('depression_label', 1);
+      }
+
+      if (depressionFilter === 'Not Depressed') {
+        query = query.eq('depression_label', 0);
+      }
+
+      if (usageFilter === '0-2h') {
+        query = query.gte('daily_social_media_hours', 0).lte('daily_social_media_hours', 2);
+      }
+
+      if (usageFilter === '3-5h') {
+        query = query.gte('daily_social_media_hours', 3).lte('daily_social_media_hours', 5);
+      }
+
+      if (usageFilter === '6h+') {
+        query = query.gte('daily_social_media_hours', 6);
+      }
+
+      const { data, count, error: fetchError } = await query;
 
       if (!isMounted) return;
 
@@ -50,8 +172,18 @@ export function DataTablePage() {
         console.error('Error fetching data table rows:', fetchError);
         setError('Could not load records from Supabase.');
         setRows([]);
+        setTotalCount(0);
       } else {
+        const nextTotalCount = count ?? 0;
+        const nextTotalPages = Math.max(1, Math.ceil(nextTotalCount / PAGE_SIZE));
+
+        if (currentPage > nextTotalPages) {
+          setCurrentPage(nextTotalPages);
+          return;
+        }
+
         setRows(data ?? []);
+        setTotalCount(nextTotalCount);
       }
 
       setLoading(false);
@@ -62,7 +194,7 @@ export function DataTablePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [currentPage, deferredSearch, depressionFilter, interactionFilter, platformFilter, sortDir, sortField, usageFilter]);
 
   const handleSort = (field: SortField) => {
     setCurrentPage(1);
@@ -73,72 +205,14 @@ export function DataTablePage() {
       setSortDir('asc');
     }
   };
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const nextRows = rows.filter((row) => {
-      if (q) {
-        const matches = [
-          String(row.id),
-          row.gender ?? '',
-          row.social_interaction_level ?? '',
-          row.daily_social_media_hours?.toString() ?? '',
-          row.platform_usage ?? '',
-          row.depression_label === 1 ? 'depressed' : 'not depressed',
-          row.depression_label?.toString() ?? '',
-        ].some((value) => value.toLowerCase().includes(q));
-        if (!matches) return false;
-      }
-
-      if (platformFilter !== 'All') {
-        const platform = row.platform_usage?.trim().toLowerCase();
-        if (platform !== platformFilter.toLowerCase()) return false;
-      }
-
-      if (interactionFilter !== 'All') {
-        const interaction = row.social_interaction_level?.trim().toLowerCase();
-        if (interaction !== interactionFilter.toLowerCase()) return false;
-      }
-
-      if (depressionFilter !== 'All') {
-        const isDepressed = row.depression_label === 1;
-        if (depressionFilter === 'Depressed' && !isDepressed) return false;
-        if (depressionFilter === 'Not Depressed' && isDepressed) return false;
-      }
-
-      if (usageFilter !== 'All') {
-        const hours = row.daily_social_media_hours ?? 0;
-        if (usageFilter === '0-2h' && hours > 2) return false;
-        if (usageFilter === '3-5h' && (hours < 3 || hours > 5)) return false;
-        if (usageFilter === '6h+' && hours < 6) return false;
-      }
-
-      return true;
-    });
-
-    nextRows.sort((a, b) => {
-      const aVal = a[sortField];
-      const bVal = b[sortField];
-
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-
-      return sortDir === 'asc'
-        ? String(aVal ?? '').localeCompare(String(bVal ?? ''))
-        : String(bVal ?? '').localeCompare(String(aVal ?? ''));
-    });
-
-    return nextRows;
-  }, [rows, search, platformFilter, interactionFilter, depressionFilter, usageFilter, sortField, sortDir]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const activePage = Math.min(currentPage, totalPages);
-
-  const paginatedRows = useMemo(() => {
-    const start = (activePage - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [activePage, filtered]);
+  const hasActiveFilters =
+    Boolean(search) ||
+    platformFilter !== 'All' ||
+    interactionFilter !== 'All' ||
+    depressionFilter !== 'All' ||
+    usageFilter !== 'All';
 
   const formatDepressionStatus = (value: number | null) => {
     if (value === 1) return 'Depressed';
@@ -146,8 +220,77 @@ export function DataTablePage() {
     return 'Unknown';
   };
 
-  const handleExport = () => {
-    const exportData = filtered.map(row => ({
+  const handleExport = async () => {
+    setExporting(true);
+    setError(null);
+    const trimmedSearch = deferredSearch.trim();
+    const normalizedSearch = trimmedSearch.toLowerCase();
+    const numericSearch = Number(trimmedSearch);
+    let exportQuery = supabase
+      .from('teen_mental_health_cleaned')
+      .select(DATA_TABLE_SELECT)
+      .order(sortField, { ascending: sortDir === 'asc' });
+
+    if (trimmedSearch) {
+      const searchClauses = [
+        `gender.ilike.%${trimmedSearch}%`,
+        `social_interaction_level.ilike.%${trimmedSearch}%`,
+        `platform_usage.ilike.%${trimmedSearch}%`,
+      ];
+
+      if (Number.isInteger(numericSearch)) {
+        searchClauses.push(`id.eq.${numericSearch}`);
+      }
+
+      if (normalizedSearch === 'depressed') {
+        searchClauses.push('depression_label.eq.1');
+      }
+
+      if (normalizedSearch === 'not depressed') {
+        searchClauses.push('depression_label.eq.0');
+      }
+
+      exportQuery = exportQuery.or(searchClauses.join(','));
+    }
+
+    if (platformFilter !== 'All') {
+      exportQuery = exportQuery.eq('platform_usage', platformFilter);
+    }
+
+    if (interactionFilter !== 'All') {
+      exportQuery = exportQuery.eq('social_interaction_level', interactionFilter.toLowerCase());
+    }
+
+    if (depressionFilter === 'Depressed') {
+      exportQuery = exportQuery.eq('depression_label', 1);
+    }
+
+    if (depressionFilter === 'Not Depressed') {
+      exportQuery = exportQuery.eq('depression_label', 0);
+    }
+
+    if (usageFilter === '0-2h') {
+      exportQuery = exportQuery.gte('daily_social_media_hours', 0).lte('daily_social_media_hours', 2);
+    }
+
+    if (usageFilter === '3-5h') {
+      exportQuery = exportQuery.gte('daily_social_media_hours', 3).lte('daily_social_media_hours', 5);
+    }
+
+    if (usageFilter === '6h+') {
+      exportQuery = exportQuery.gte('daily_social_media_hours', 6);
+    }
+
+    const { data, error: exportError } = await exportQuery;
+
+    if (exportError) {
+      console.error('Error exporting data table rows:', exportError);
+      setError('Could not export filtered records from Supabase.');
+      setExporting(false);
+      return;
+    }
+
+    const exportData = (data ?? []).map((row) => ({
       'ID': row.id,
       'Gender': row.gender ?? 'Unknown',
       'Social Interaction': row.social_interaction_level ?? 'Unknown',
@@ -161,6 +304,7 @@ export function DataTablePage() {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
 
     XLSX.writeFile(workbook, 'MindScope_Data.xlsx');
+    setExporting(false);
   };
 
   return (
@@ -174,14 +318,15 @@ export function DataTablePage() {
         </div>
         <button
           onClick={handleExport}
+          disabled={loading || exporting}
           className="
             flex items-center gap-2 px-4 py-2 rounded-md font-body text-[13px] font-semibold
             bg-sage text-white hover:bg-sage-dark shadow-sm hover:-translate-y-0.5 hover:shadow-card-hover
-            transition-all duration-300 ease-out shrink-0
+            transition-all duration-300 ease-out shrink-0 disabled:opacity-60 disabled:cursor-not-allowed
           "
         >
           <Download size={15} />
-          Export Data
+          {exporting ? 'Exporting...' : 'Export Data'}
         </button>
       </div>
 
@@ -210,69 +355,61 @@ export function DataTablePage() {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <select
+            <FilterSelect
+              label="Platform:"
               value={platformFilter}
-              onChange={(e) => {
-                setPlatformFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-transparent border-none text-[13px] font-medium text-forest focus:ring-0 cursor-pointer hover:text-sage-dark transition-colors p-0"
-            >
-              <option value="All">Platform: All</option>
-              <option value="TikTok">Platform: TikTok</option>
-              <option value="Instagram">Platform: Instagram</option>
-              <option value="Both">Platform: Both</option>
-            </select>
+              options={[
+                { value: 'All', label: 'All' },
+                { value: 'TikTok', label: 'TikTok' },
+                { value: 'Instagram', label: 'Instagram' },
+                { value: 'Both', label: 'Both' },
+              ]}
+              onChange={(v) => { setPlatformFilter(v); setCurrentPage(1); }}
+            />
 
             <span className="w-1 h-1 rounded-full bg-mist-light"></span>
 
-            <select
+            <FilterSelect
+              label="Interaction:"
               value={interactionFilter}
-              onChange={(e) => {
-                setInteractionFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-transparent border-none text-[13px] font-medium text-forest focus:ring-0 cursor-pointer hover:text-sage-dark transition-colors p-0"
-            >
-              <option value="All">Interaction: All</option>
-              <option value="High">Interaction: High</option>
-              <option value="Medium">Interaction: Medium</option>
-              <option value="Low">Interaction: Low</option>
-            </select>
+              options={[
+                { value: 'All', label: 'All' },
+                { value: 'High', label: 'High' },
+                { value: 'Medium', label: 'Medium' },
+                { value: 'Low', label: 'Low' },
+              ]}
+              onChange={(v) => { setInteractionFilter(v); setCurrentPage(1); }}
+            />
 
             <span className="w-1 h-1 rounded-full bg-mist-light"></span>
 
-            <select
+            <FilterSelect
+              label="Depression:"
               value={depressionFilter}
-              onChange={(e) => {
-                setDepressionFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-transparent border-none text-[13px] font-medium text-forest focus:ring-0 cursor-pointer hover:text-sage-dark transition-colors p-0"
-            >
-              <option value="All">Depression: All</option>
-              <option value="Depressed">Depressed</option>
-              <option value="Not Depressed">Not Depressed</option>
-            </select>
+              options={[
+                { value: 'All', label: 'All' },
+                { value: 'Depressed', label: 'Depressed' },
+                { value: 'Not Depressed', label: 'Not Depressed' },
+              ]}
+              onChange={(v) => { setDepressionFilter(v); setCurrentPage(1); }}
+            />
 
             <span className="w-1 h-1 rounded-full bg-mist-light"></span>
 
-            <select
+            <FilterSelect
+              label="Usage:"
               value={usageFilter}
-              onChange={(e) => {
-                setUsageFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-transparent border-none text-[13px] font-medium text-forest focus:ring-0 cursor-pointer hover:text-sage-dark transition-colors p-0"
-            >
-              <option value="All">Usage: All</option>
-              <option value="0-2h">Usage: 0-2h</option>
-              <option value="3-5h">Usage: 3-5h</option>
-              <option value="6h+">Usage: 6h+</option>
-            </select>
+              options={[
+                { value: 'All', label: 'All' },
+                { value: '0-2h', label: '0-2h' },
+                { value: '3-5h', label: '3-5h' },
+                { value: '6h+', label: '6h+' },
+              ]}
+              onChange={(v) => { setUsageFilter(v); setCurrentPage(1); }}
+            />
           </div>
 
-          {(search || platformFilter !== 'All' || interactionFilter !== 'All' || depressionFilter !== 'All' || usageFilter !== 'All') && (
+          <div className="shrink-0 ml-auto sm:ml-0">
             <button
               type="button"
               onClick={() => {
@@ -284,18 +421,21 @@ export function DataTablePage() {
                 setCurrentPage(1);
               }}
               className="
-                p-2.5 rounded-md border border-mist-light bg-card
+                flex items-center justify-center p-2.5 rounded-md border border-mist-light bg-card
                 text-text-muted hover:text-dusk hover:bg-cream
-                transition-all duration-200 shrink-0
+                transition-all duration-200 min-h-[38px] min-w-[38px]
               "
+              disabled={!hasActiveFilters}
+              aria-hidden={!hasActiveFilters}
               title="Clear all filters"
+              style={{ visibility: hasActiveFilters ? 'visible' : 'hidden' }}
             >
               <X size={16} />
             </button>
-          )}
+          </div>
         </div>
         <span className="font-body text-xs text-text-muted whitespace-nowrap shrink-0 lg:ml-4">
-          {loading ? 'Loading records...' : `${filtered.length} of ${rows.length} records`}
+          {loading ? 'Loading records...' : `${rows.length} shown of ${totalCount} records`}
         </span>
       </div>
 
@@ -341,7 +481,7 @@ export function DataTablePage() {
                   </td>
                 </tr>
               )}
-              {!loading && !error && paginatedRows.map((row) => (
+              {!loading && !error && rows.map((row) => (
                 <tr
                   key={row.id}
                   className={`
@@ -365,8 +505,8 @@ export function DataTablePage() {
                     <span className={`
                       inline-flex items-center px-2.5 py-0.5 rounded-full
                       text-[11px] font-semibold border
-                      ${row.depression_label === 1 
-                        ? 'bg-dusk-light border-dusk/30 text-dusk' 
+                      ${row.depression_label === 1
+                        ? 'bg-dusk-light border-dusk/30 text-dusk'
                         : 'bg-sage-light border-sage/30 text-sage-dark'}
                     `}>
                       {formatDepressionStatus(row.depression_label)}
@@ -374,7 +514,7 @@ export function DataTablePage() {
                   </td>
                 </tr>
               ))}
-              {!loading && !error && filtered.length === 0 && (
+              {!loading && !error && rows.length === 0 && (
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-12 text-center text-text-muted">
                     No records match your search.
@@ -386,7 +526,7 @@ export function DataTablePage() {
         </div>
       </div>
 
-      {!loading && !error && filtered.length > 0 && (
+      {!loading && !error && totalCount > 0 && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="font-body text-xs text-text-muted">
             Page {activePage} of {totalPages}
