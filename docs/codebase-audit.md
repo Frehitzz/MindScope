@@ -6,7 +6,7 @@ Scope: React/Vite frontend, Supabase client usage, dataset cleaning/upload scrip
 
 ## Executive Summary
 
-The app now builds successfully and passes lint. The main remaining best-practice gaps are duplicated Supabase aggregation logic, no automated tests, no declared Python dependency file, partial client-side aggregation for dashboard/insight data, and runtime/privacy hardening work.
+The app now builds successfully and passes lint. The main remaining best-practice gaps are missing automated tests, no declared Python dependency file, row-level privacy hardening for the public data table path, duplicated summary/insight logic, and runtime hardening work.
 
 This project is usable as a school/demo dashboard, but it should not be treated as production-ready until the high-priority findings below are fixed.
 
@@ -18,10 +18,10 @@ Use this section as the working tracker for what is done, what is partially done
   `npm run lint` passes after typing/chart and pagination-state fixes.
 - [x] Task 2: Add typed Supabase schema and shared row types
   Implemented in `src/types/` and wired into the Supabase client/pages.
-- [ ] Task 3: Complete server-side data fetching for the whole app
-  `DataTablePage` is server-driven now, but `DashboardPage` and `InsightPage` still aggregate in the browser.
-- [ ] Task 4: Document privacy and RLS boundaries
-  Still needed before using non-demo or sensitive data.
+- [x] Task 3: Complete server-side data fetching for the whole app
+  `DataTablePage` is server-driven now, and `DashboardPage`/`InsightPage` now consume aggregate RPCs instead of raw-row datasets.
+- [x] Task 4: Document privacy and RLS boundaries
+  Added [docs/privacy-and-rls-boundaries.md](/C:/Mycodes/MindScope/docs/privacy-and-rls-boundaries.md:1) and a safe `.env.example` for frontend setup.
 - [ ] Task 5: Extract shared analytics module
   Dashboard and insight logic is still duplicated.
 - [ ] Task 6: Add automated frontend and Python tests
@@ -45,6 +45,8 @@ Use this section as the working tracker for what is done, what is partially done
 - Supabase client typing is in place with shared row aliases.
 - `DataTablePage` no longer fetches the full dataset just to paginate/filter in the browser.
 - `DataTablePage` now uses server-side pagination, sorting, filtering, and export queries.
+- `DashboardPage` and `InsightPage` now use aggregate RPC functions instead of browser-side raw-row aggregation.
+- Privacy/RLS boundaries are now documented, with a safe frontend `.env.example`.
 - Interaction filter case mismatch was fixed.
 - Toolbar clear-button flicker/layout shift was fixed.
 
@@ -52,18 +54,18 @@ Use this section as the working tracker for what is done, what is partially done
 
 The next highest-value task is:
 
-`Task 3: complete the remaining server-side data work for DashboardPage and InsightPage`
+`Task 5: extract the remaining shared analytics/module boundaries and add tests`
 
 Why this should be next:
 
-- it closes the unfinished part of a high-priority audit item
-- it removes unnecessary raw-row fetching from the dashboard paths
-- it improves scalability and reduces data exposure
+- task 3 and task 4 are now documented and implemented at the data-boundary level
+- the next remaining risk is duplicated analytics logic and missing tests
+- it improves maintainability before more features are added
 
 Concrete next step:
 
-- create Supabase views or RPC functions for dashboard KPIs and insight aggregates
-- update `DashboardPage.tsx` and `InsightPage.tsx` to consume summarized results instead of full-row datasets
+- extract the shared aggregate formatting or analytics helpers into a narrower reusable module
+- add tests around aggregate result mapping and table/query behavior
 
 ## Verification Results
 
@@ -115,12 +117,12 @@ Suggested fix:
 
 ### 3. Frontend fetches full table data and calculates aggregates in the browser
 
-Status: Partial
+Status: Done
 
 Evidence:
 
-- `src/pages/DashboardPage.tsx:73` selects all rows needed for KPIs and chart aggregations.
-- `src/pages/InsightPage.tsx:105` repeats similar full-table aggregation logic.
+- `src/pages/DashboardPage.tsx` now reads aggregate RPC results through `src/lib/dashboardAggregates.ts`.
+- `src/pages/InsightPage.tsx` now reads aggregate RPC results through `src/lib/dashboardAggregates.ts`.
 - `src/pages/DataTablePage.tsx:51` fetches the full table, then filters, sorts, paginates, and exports client-side.
 
 Impact:
@@ -136,27 +138,26 @@ Suggested fix:
 Progress:
 
 - `DataTablePage` now uses server-side pagination, sorting, filtering, and export queries.
-- `DashboardPage` and `InsightPage` still need aggregate views or RPC functions to fully close this item.
+- `DashboardPage` and `InsightPage` now use aggregate RPC functions instead of raw-row browser aggregation.
 
 ### 4. Data access and privacy rules are not documented or enforced in code
 
-Status: Pending
+Status: Done
 
 Evidence:
 
-- Browser code reads `teen_mental_health_cleaned` directly using the anon key.
-- The README correctly says the dataset is educational/demo, but there is no RLS policy documentation or privacy boundary in the app.
+- Browser code uses the anon key for frontend reads and aggregate RPCs.
+- [docs/privacy-and-rls-boundaries.md](/C:/Mycodes/MindScope/docs/privacy-and-rls-boundaries.md:1) now documents the intended `anon` vs `service_role` boundary and the remaining row-level risk in `DataTablePage`.
 
 Impact:
 
 If this project is connected to real or sensitive student wellbeing data, direct browser access can leak row-level information unless Supabase Row Level Security policies are strict.
 
-Suggested fix:
+Implemented documentation:
 
-- Ensure RLS is enabled on Supabase tables.
-- Add policy documentation under `docs/` that states which roles can read aggregate data and row-level data.
-- Prefer public aggregate views for the dashboard and protect raw-row access.
-- Add `.env.example` with only public Vite anon-key variables for frontend setup.
+- Added `docs/privacy-and-rls-boundaries.md` with recommended RLS posture and role boundaries.
+- Added `.env.example` containing only public frontend variables.
+- Documented that aggregate RPCs are the preferred public data surface and that `DataTablePage` remains a demo-only row-level boundary unless stricter RLS is added.
 
 ## Medium Priority Findings
 
@@ -313,14 +314,12 @@ Suggested fix:
 
 ## Recommended Fix Order
 
-1. Fix the lint errors so `npm run lint` passes.
-2. Complete the remaining server-side aggregate work for dashboard and insight pages.
-3. Add RLS/privacy documentation before using non-demo data.
-4. Extract duplicated analytics calculations into a tested utility module.
-5. Add frontend unit tests for analytics and table behavior.
-6. Add Python dependency declaration and pytest coverage for cleaning.
-7. Make uploads idempotent.
-8. Code-split `xlsx`, chart-heavy routes, and large page modules.
+1. Extract duplicated analytics calculations into a tested utility module.
+2. Add frontend unit tests for analytics and table behavior.
+3. Add Python dependency declaration and pytest coverage for cleaning.
+4. Make uploads idempotent.
+5. Reduce row-level public exposure in `DataTablePage` if the project moves beyond demo data.
+6. Code-split `xlsx`, chart-heavy routes, and large page modules.
 
 ## Suggested CI Gate
 

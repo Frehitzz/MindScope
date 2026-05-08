@@ -99,3 +99,4 @@ Expected row count:
 - This dataset is for school-project use.
 - Do not describe it as a real diagnostic or clinical dataset unless you have a verified source.
 - If you rerun the upload script against the same table, it may insert duplicate logical rows unless you clear the table first.
+- Frontend environment files should contain only `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Keep service-role keys out of the browser setup. See [docs/privacy-and-rls-boundaries.md](/C:/Mycodes/MindScope/docs/privacy-and-rls-boundaries.md:1).
