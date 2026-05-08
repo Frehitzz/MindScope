@@ -56,6 +56,7 @@ def main() -> None:
         supabase_key=str(settings["supabase_key"]),
         table_name=str(settings["cleaned_table_name"]),
         chunk_size=int(settings["upload_chunk_size"]),
+        clear_first=True,
     )
 
     print(f"Cleaned CSV written to {cleaned_csv_path}")
