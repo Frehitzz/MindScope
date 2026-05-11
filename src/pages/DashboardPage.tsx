@@ -184,10 +184,10 @@ export function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-card border border-mist-light rounded-md shadow-card p-5 h-[116px] animate-pulse flex flex-col gap-2 relative">
+            <div key={i} className="bg-card border border-mist-light rounded-md shadow-card p-4 sm:p-5 h-[104px] sm:h-[116px] animate-pulse flex flex-col gap-2 relative">
               <div className="h-3 bg-mist-light/60 rounded w-1/3 mb-2"></div>
               <div className="h-8 bg-mist-light/60 rounded w-1/2"></div>
               <div className="h-3 bg-mist-light/60 rounded w-2/3 mt-auto"></div>
@@ -209,7 +209,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-5">
         {/* Addiction by Platform — Bar */}
         <ChartCard>
-          <SectionHeader title="Avg. Addiction Level by Platform" badge="Live Data" />
+          <SectionHeader title="Avg. Addiction Level by Platform" />
           <div className="h-60">
             {loading ? (
               <div className="w-full h-full bg-mist-light/30 animate-pulse rounded-md" />
@@ -283,7 +283,7 @@ export function DashboardPage() {
 
         {/* Depression Rate by Interaction Group — Pie */}
         <ChartCard>
-          <SectionHeader title="Depression Rate by Interaction Group" badge="Live Data" />
+          <SectionHeader title="Depression Rate by Interaction Group" />
           <div className="h-60">
             {loading ? (
               <div className="w-full h-full bg-mist-light/30 animate-pulse rounded-md" />
@@ -314,7 +314,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="lg:col-span-1">
           <ChartCard>
-            <SectionHeader title="Usage Hours vs. Depression Rate" badge="Live Data" />
+            <SectionHeader title="Usage Hours vs. Depression Rate" />
             <div className="h-64 flex items-center justify-center">
               {loading ? (
                 <div className="w-full h-full bg-mist-light/30 animate-pulse rounded-md" />
@@ -386,7 +386,7 @@ export function DashboardPage() {
 
         {/* Quick insight cards */}
         <div className="lg:col-span-1 bg-card border border-mist-light rounded-md shadow-card p-6 overflow-y-auto">
-          <SectionHeader title="Quick Insights" badge="Chart Guide" badgeVariant="dusk" />
+          <SectionHeader title="Quick Insights" />
           <ul className="space-y-3 font-body text-sm text-text-body">
             <li className="flex items-start gap-3 bg-cream rounded-md p-4 border border-mist-light">
               <Smartphone size={18} className="text-sage shrink-0 mt-0.5" />
