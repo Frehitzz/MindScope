@@ -6,7 +6,7 @@ This file explains how the KPI cards on `DashboardPage.tsx` get their data and h
 
 The 4 KPI cards on the dashboard do this:
 
-1. React first shows default values from `src/data/mockData.ts`.
+1. React first shows default values from `frontend/src/data/mockData.ts`.
 2. When the page loads, `useEffect` runs.
 3. `useEffect` calls Supabase and reads rows from the `teen_mental_health_cleaned` table.
 4. React loops through all returned rows and adds up each numeric column.
@@ -18,7 +18,7 @@ The 4 KPI cards on the dashboard do this:
 
 ### 1. Supabase client
 
-File: [src/lib/supabase.ts](/abs/path/C:/Mycodes/MindScope/src/lib/supabase.ts:1)
+File: [frontend/src/api/supabase.ts](/C:/Mycodes/MindScope/frontend/src/api/supabase.ts:1)
 
 This file creates the Supabase client:
 
@@ -40,7 +40,7 @@ Important: this does not fetch data by itself. It only prepares the connection.
 
 ### 2. Initial dashboard values
 
-File: [src/data/mockData.ts](/abs/path/C:/Mycodes/MindScope/src/data/mockData.ts:3)
+File: [frontend/src/data/mockData.ts](/C:/Mycodes/MindScope/frontend/src/data/mockData.ts:3)
 
 `statsOverview` contains the initial card values:
 
@@ -66,7 +66,7 @@ That means:
 
 ### 3. React fetches live data after the page loads
 
-File: [src/pages/DashboardPage.tsx](/abs/path/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:43)
+File: [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:43)
 
 This is the important part:
 
@@ -368,7 +368,7 @@ That means each object inside `stats` becomes one `StatCard`.
 
 ## What the `StatCard` component does
 
-File: [src/components/StatCard.tsx](/abs/path/C:/Mycodes/MindScope/src/components/StatCard.tsx:1)
+File: [frontend/src/components/StatCard.tsx](/C:/Mycodes/MindScope/frontend/src/components/StatCard.tsx:1)
 
 `StatCard` does not calculate anything.
 
@@ -407,7 +407,7 @@ The KPI cards are live from Supabase, but most of the charts are still using moc
 - `stressTriggers`
 - `wellbeingBreakdown`
 
-Those come from `src/data/mockData.ts`, not from Supabase.
+Those come from `frontend/src/data/mockData.ts`, not from Supabase.
 
 So on this page:
 
@@ -421,7 +421,7 @@ Here is the full flow:
 ```text
 .env
   -> VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
-  -> src/lib/supabase.ts creates the client
+  -> frontend/src/api/supabase.ts creates the client
   -> DashboardPage.tsx imports the client
   -> useEffect runs on page load
   -> Supabase query fetches 4 columns from teen_mental_health_cleaned

@@ -9,7 +9,7 @@ The cleaned table is the correct source because it contains the processed output
 
 These expected answers are based on the current cleaned dataset that was generated from:
 
-- `dataset/Teen_Mental_Health_Dataset.cleaned.csv`
+- `data/Teen_Mental_Health_Dataset.cleaned.csv`
 
 ## Query 1
 

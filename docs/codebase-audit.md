@@ -83,7 +83,7 @@ Status: Done
 
 Evidence:
 
-- `src/pages/DashboardPage.tsx:26`, `:42`, `:63`, `:327`, `:349`, `:362`, `:408` use explicit `any`.
+- `frontend/src/pages/DashboardPage.tsx:26`, `:42`, `:63`, `:327`, `:349`, `:362`, `:408` use explicit `any`.
 - `src/pages/DataTablePage.tsx:146` and `:151` synchronously call `setCurrentPage` inside effects, which the configured React Hooks lint rules reject.
 
 Impact:
@@ -102,7 +102,7 @@ Status: Done
 
 Evidence:
 
-- `src/lib/supabase.ts:10` creates an untyped Supabase client.
+- `frontend/src/api/supabase.ts:10` creates an untyped Supabase client.
 - `DashboardPage.tsx`, `InsightPage.tsx`, and `DataTablePage.tsx` cast or infer database rows manually.
 
 Impact:
@@ -121,9 +121,9 @@ Status: Done
 
 Evidence:
 
-- `src/pages/DashboardPage.tsx` now reads aggregate RPC results through `src/lib/dashboardAggregates.ts`.
-- `src/pages/InsightPage.tsx` now reads aggregate RPC results through `src/lib/dashboardAggregates.ts`.
-- `src/pages/DataTablePage.tsx:51` fetches the full table, then filters, sorts, paginates, and exports client-side.
+- `frontend/src/pages/DashboardPage.tsx` now reads aggregate RPC results through `frontend/src/lib/dashboardAggregates.ts`.
+- `frontend/src/pages/InsightPage.tsx` now reads aggregate RPC results through `frontend/src/lib/dashboardAggregates.ts`.
+- `frontend/src/pages/DataTablePage.tsx:51` fetches the full table, then filters, sorts, paginates, and exports client-side.
 
 Impact:
 
@@ -197,7 +197,7 @@ Suggested fix:
 
 - Add Vitest and React Testing Library for frontend tests.
 - Add tests for analytics functions and `DataTablePage` filter/sort/pagination behavior.
-- Add pytest for `dataset/cleaning.py`, especially missing-value handling, normalization, and IQR filtering.
+- Add pytest for `data/cleaning.py`, especially missing-value handling, normalization, and IQR filtering.
 
 ### 7. Python dependencies are documented but not declared
 
@@ -205,9 +205,9 @@ Status: Pending
 
 Evidence:
 
-- `dataset/config.py:6` imports `dotenv`.
-- `dataset/cleaning.py` imports `pandas`.
-- `dataset/upload_to_supabase.py` imports `requests`.
+- `data/config.py:6` imports `dotenv`.
+- `data/cleaning.py` imports `pandas`.
+- `data/upload_to_supabase.py` imports `requests`.
 - README lists these packages, but there is no `requirements.txt`, `pyproject.toml`, or lock file.
 
 Impact:
@@ -216,9 +216,9 @@ The dataset pipeline is not reproducible from the repository alone.
 
 Suggested fix:
 
-- Add `dataset/requirements.txt` or a root `pyproject.toml`.
+- Add `data/requirements.txt` or a root `pyproject.toml`.
 - Include at least `pandas`, `requests`, and `python-dotenv`.
-- Add a short command in README: `pip install -r dataset/requirements.txt`.
+- Add a short command in README: `pip install -r data/requirements.txt`.
 
 ### 8. Upload pipeline can duplicate data
 
@@ -227,7 +227,7 @@ Status: Pending
 Evidence:
 
 - README notes rerunning uploads may insert duplicate logical rows.
-- `dataset/upload_to_supabase.py` uses plain `POST` inserts with no upsert, truncate, or idempotency strategy.
+- `data/upload_to_supabase.py` uses plain `POST` inserts with no upsert, truncate, or idempotency strategy.
 
 Impact:
 
@@ -266,7 +266,7 @@ Status: Pending
 
 Evidence:
 
-- `src/pages/DashboardPage.tsx` comments render `â€”`.
+- `frontend/src/pages/DashboardPage.tsx` comments render `â€”`.
 - `src/components/Topbar.tsx` renders `28Â°C`.
 - `src/components/Sidebar.tsx` renders `Jan â€“ May 2026`.
 
@@ -301,7 +301,7 @@ Status: Pending
 
 Evidence:
 
-- `src/lib/supabase.ts` throws during module import if env variables are missing.
+- `frontend/src/api/supabase.ts` throws during module import if env variables are missing.
 - Dashboard and insight pages log errors but do not show a consistent user-facing error state.
 
 Impact:
@@ -335,6 +335,6 @@ npm run build
 If Python pipeline work is part of the project deliverable, also run:
 
 ```powershell
-pip install -r dataset/requirements.txt
+pip install -r data/requirements.txt
 pytest
 ```

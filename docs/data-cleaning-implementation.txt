@@ -1,9 +1,9 @@
 Data Cleaning Implementation
 
-This document outlines the strategies and techniques used in our Python data cleaning pipeline (dataset/run_cleaning_pipeline.py) to prepare the Teen Mental Health Dataset for analysis and storage.
+This document outlines the strategies and techniques used in our Python data cleaning pipeline (data/run_cleaning_pipeline.py) to prepare the Teen Mental Health Dataset for analysis and storage.
 
 1. Handling Missing or Null Values
-File: dataset/cleaning.py
+File: data/cleaning.py
 Strategy Used: Flag and Fill (Median/Mode Imputation)
 
 Our approach ensures no data is arbitrarily dropped while maintaining a record of which values were originally missing:
@@ -12,7 +12,7 @@ Our approach ensures no data is arbitrarily dropped while maintaining a record o
 - Filling Categorical Data: If the column contains text/categories (e.g., platform_usage), missing values are filled using the mode (the most frequent value) of that column.
 
 2. Normalization / Standardization
-File: dataset/cleaning.py
+File: data/cleaning.py
 Method Used: Min-Max Scaling
 
 We normalize the daily_social_media_hours column to put it on a standard mathematical scale between 0.0 and 1.0. 
@@ -20,7 +20,7 @@ We normalize the daily_social_media_hours column to put it on a standard mathema
 - Output: This creates a brand new column called daily_social_media_hours_min_max, preserving the original raw data column while providing the scaled version for machine learning algorithms.
 
 3. Filtering Outliers
-File: dataset/cleaning.py
+File: data/cleaning.py
 Method Used: Interquartile Range (IQR)
 
 To prevent extreme, unrealistic values from skewing our analysis, we apply the IQR statistical method to all continuous numeric columns (such as age, stress_level, etc.):
@@ -29,7 +29,7 @@ To prevent extreme, unrealistic values from skewing our analysis, we apply the I
 - Action: Any row containing a value that falls outside these boundaries in any of the checked columns is completely dropped from the dataset.
 
 4. Cloud Storage Export
-File: dataset/upload_to_supabase.py & dataset/run_cleaning_pipeline.py
+File: data/upload_to_supabase.py & data/run_cleaning_pipeline.py
 Destination: Supabase (PostgreSQL) via REST API
 
 After the dataframe has been fully cleaned in memory, the pipeline securely exports it to our cloud database:

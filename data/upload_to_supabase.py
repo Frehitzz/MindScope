@@ -88,7 +88,7 @@ def main() -> None:
     )
     
     print(f"\nSuccess! Raw data uploaded to '{settings['source_table_name']}'.")
-    print("Next step: run 'python dataset/run_cleaning_pipeline.py' to populate the cleaned table.")
+    print("Next step: run 'python data/run_cleaning_pipeline.py' to populate the cleaned table.")
 
 
 if __name__ == "__main__":

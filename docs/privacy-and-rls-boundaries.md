@@ -24,9 +24,9 @@ Current frontend access paths:
 
 Relevant files:
 
-- [src/lib/supabase.ts](/C:/Mycodes/MindScope/src/lib/supabase.ts:1)
-- [src/lib/dashboardAggregates.ts](/C:/Mycodes/MindScope/src/lib/dashboardAggregates.ts:1)
-- [src/pages/DataTablePage.tsx](/C:/Mycodes/MindScope/src/pages/DataTablePage.tsx:1)
+- [frontend/src/api/supabase.ts](/C:/Mycodes/MindScope/frontend/src/api/supabase.ts:1)
+- [frontend/src/lib/dashboardAggregates.ts](/C:/Mycodes/MindScope/frontend/src/lib/dashboardAggregates.ts:1)
+- [frontend/src/pages/DataTablePage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DataTablePage.tsx:1)
 
 ## Privacy boundary
 
@@ -172,7 +172,7 @@ SUPABASE_URL=your-project-url
 SUPABASE_KEY=your-service-role-key
 ```
 
-Those values are appropriate for Python scripts such as dataset upload, not for Vite client code.
+Those values are appropriate for Python scripts such as data upload, not for Vite client code.
 
 ## Practical policy for this repository
 

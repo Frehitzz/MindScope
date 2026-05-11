@@ -1,6 +1,6 @@
 {
-  "source_csv": "C:\\Mycodes\\MindScope\\dataset\\Teen_Mental_Health_Dataset.csv",
-  "cleaned_csv": "C:\\Mycodes\\MindScope\\dataset\\Teen_Mental_Health_Dataset.cleaned.csv",
+  "source_csv": "C:\\Mycodes\\MindScope\\data\\Teen_Mental_Health_Dataset.csv",
+  "cleaned_csv": "C:\\Mycodes\\MindScope\\data\\Teen_Mental_Health_Dataset.cleaned.csv",
   "cloud_destination_table": "teen_mental_health_cleaned",
   "missing_value_strategy": [
     {

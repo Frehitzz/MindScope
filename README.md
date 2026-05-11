@@ -21,8 +21,8 @@ Current intended boundary:
 
 ## Dataset Files
 
-- CSV source: `dataset/Teen_Mental_Health_Dataset.csv`
-- Upload script: `dataset/upload_to_supabase.py`
+- CSV source: `data/Teen_Mental_Health_Dataset.csv`
+- Upload script: `data/upload_to_supabase.py`
 - Base table SQL: `docs/creating-table.md`
 - Dashboard RPC SQL: `docs/dashboard-aggregate-rpcs.sql`
 - Public table view setup: `docs/data-table-public-view-setup.md`
@@ -55,8 +55,8 @@ To set up the project from scratch in a new Supabase instance, follow these step
 | **1** | Create Base Tables | SQL Editor | [docs/creating-table.md](/C:/Mycodes/MindScope/docs/creating-table.md:1) |
 | **2** | Set Up Dashboard RPCs | SQL Editor | [docs/dashboard-aggregate-rpcs.sql](/C:/Mycodes/MindScope/docs/dashboard-aggregate-rpcs.sql:1) |
 | **3** | Set Up Public View | SQL Editor | [docs/data-table-public-view-setup.md](/C:/Mycodes/MindScope/docs/data-table-public-view-setup.md:1) |
-| **4** | Upload Raw Data | Terminal | `python dataset/upload_to_supabase.py` |
-| **5** | Run Cleaning Pipeline | Terminal | `python dataset/run_cleaning_pipeline.py` |
+| **4** | Upload Raw Data | Terminal | `python data/upload_to_supabase.py` |
+| **5** | Run Cleaning Pipeline | Terminal | `python data/run_cleaning_pipeline.py` |
 
 ---
 
@@ -93,7 +93,7 @@ pip install pandas requests python-dotenv
 
 ### Dataset/script environment
 
-Create a `.env` file in the project root or in the `dataset` folder with:
+Create a `.env` file in the `data` folder with:
 
 ```env
 SUPABASE_URL=your-supabase-project-url
@@ -116,7 +116,7 @@ VITE_SUPABASE_ANON_KEY=your-public-anon-key
 
 Use:
 
-- [.env.example](/C:/Mycodes/MindScope/.env.example:1)
+- [frontend/.env.example](/C:/Mycodes/MindScope/frontend/.env.example:1)
 
 Do not place service-role secrets in frontend env files.
 
@@ -125,7 +125,7 @@ Do not place service-role secrets in frontend env files.
 Run the uploader from the project root to populate the raw table:
 
 ```powershell
-python dataset/upload_to_supabase.py
+python data/upload_to_supabase.py
 ```
 
 ### 2.5 Run The Cleaning Pipeline
@@ -133,13 +133,27 @@ python dataset/upload_to_supabase.py
 After uploading the raw data, run the cleaning pipeline to populate the dashboard data:
 
 ```powershell
-python dataset/run_cleaning_pipeline.py
+python data/run_cleaning_pipeline.py
 ```
 
 The cleaning script will:
-- read `dataset/Teen_Mental_Health_Dataset.csv`
+- read `data/Teen_Mental_Health_Dataset.csv`
 - perform data cleaning and validation
 - upload the processed records to `teen_mental_health_cleaned`
+
+## Deployment Roots
+
+Current deployment structure:
+
+- Vercel frontend root: `frontend/`
+- Render backend root: `backend/`
+
+Frontend build files now live under:
+
+- [frontend/package.json](/C:/Mycodes/MindScope/frontend/package.json:1)
+- [frontend/vercel.json](/C:/Mycodes/MindScope/frontend/vercel.json:1)
+
+The backend folder is reserved for the future Express service and should be used as the Render root when the backend code is added.
 
 > [!NOTE]
 > **No Duplicates**: The upload scripts are safe to rerun. They will automatically clear their respective tables before uploading the fresh data, preventing duplicate records.
@@ -200,9 +214,10 @@ If you see `3000` or another larger number, that usually means the cleaned datas
 
 ### 2.9 Run The Frontend
 
-Start the app with your normal Vite command:
+Run the frontend from the `frontend/` folder:
 
 ```powershell
+cd frontend
 npm run dev
 ```
 

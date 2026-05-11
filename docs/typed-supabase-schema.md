@@ -6,9 +6,9 @@ Date: 2026-05-08
 
 The frontend now uses a typed Supabase client and shared row-type aliases:
 
-- `src/types/database.ts`
-- `src/types/teenMentalHealth.ts`
-- `src/lib/supabase.ts`
+- `frontend/src/types/database.ts`
+- `frontend/src/types/teenMentalHealth.ts`
+- `frontend/src/api/supabase.ts`
 
 The pages that read from `teen_mental_health_cleaned` now import shared types instead of defining their own local row shapes or relying on untyped query results.
 

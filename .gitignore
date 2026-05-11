@@ -29,3 +29,6 @@ __pycache__/
 
 # environment variables
 .env
+frontend/.env
+backend/.env
+data/.env

@@ -1,6 +1,6 @@
 # Dataset Cleaning Pipeline
 
-This project now uses a split Python pipeline in `dataset/` instead of keeping all logic in one file.
+This project now uses a split Python pipeline in `data/` instead of keeping all logic in one file.
 
 ## Setup Requirements
 
@@ -16,33 +16,33 @@ pip install pandas requests python-dotenv
 - The source dataset exists at:
 
 ```text
-dataset/Teen_Mental_Health_Dataset.csv
+data/Teen_Mental_Health_Dataset.csv
 ```
 
 - Supabase credentials are available in:
 
 ```text
-dataset/.env
+data/.env
 ```
 
 - The destination Supabase table for cleaned data has been created
 
 ## Files
 
-- `dataset/config.py`
+- `data/config.py`
   Loads file paths, Supabase credentials, table names, and upload settings.
-- `dataset/cleaning.py`
+- `data/cleaning.py`
   Handles missing values, normalizes one numeric column, and filters outliers.
-- `dataset/upload_to_supabase.py`
+- `data/upload_to_supabase.py`
   Uploads the cleaned dataset to Supabase in chunks.
-- `dataset/run_cleaning_pipeline.py`
+- `data/run_cleaning_pipeline.py`
   Runs the full workflow end to end.
 
 ## What The Pipeline Does
 
 ### 1. Handle missing or null values
 
-The script checks every column and records the strategy used for that column in `dataset/cleaning_summary.json`.
+The script checks every column and records the strategy used for that column in `data/cleaning_summary.json`.
 
 - Numeric columns:
   Missing values are flagged in a new column named `<column>_was_missing`, then filled with the column median.
@@ -101,7 +101,7 @@ For the current dataset, the selected continuous columns produce zero removed ro
 
 The cleaned dataset is exported in two places:
 
-- Local cleaned CSV: `dataset/Teen_Mental_Health_Dataset.cleaned.csv`
+- Local cleaned CSV: `data/Teen_Mental_Health_Dataset.cleaned.csv`
 - Supabase table: `teen_mental_health_cleaned` by default
 
 You can change the destination table with:
@@ -112,7 +112,7 @@ SUPABASE_CLEANED_TABLE_NAME=your_table_name
 
 ## Environment Variables
 
-Put these in `dataset/.env`:
+Put these in `data/.env`:
 
 ```env
 SUPABASE_URL=your-supabase-project-url
@@ -155,7 +155,7 @@ docs/creating-table.md
 
 This creates both the raw table and the cleaned table.
 
-### 3. Create `dataset/.env`
+### 3. Create `data/.env`
 
 Add your real Supabase values:
 
@@ -172,7 +172,7 @@ UPLOAD_CHUNK_SIZE=200
 The script expects this file:
 
 ```text
-dataset/Teen_Mental_Health_Dataset.csv
+data/Teen_Mental_Health_Dataset.csv
 ```
 
 ### 5. Run the cleaning pipeline
@@ -180,15 +180,15 @@ dataset/Teen_Mental_Health_Dataset.csv
 From the project root:
 
 ```powershell
-python dataset/run_cleaning_pipeline.py
+python data/run_cleaning_pipeline.py
 ```
 
 ### 6. Check the outputs
 
 After the run finishes, verify:
 
-- `dataset/Teen_Mental_Health_Dataset.cleaned.csv` was created
-- `dataset/cleaning_summary.json` was created
+- `data/Teen_Mental_Health_Dataset.cleaned.csv` was created
+- `data/cleaning_summary.json` was created
 - the Supabase table `teen_mental_health_cleaned` contains the uploaded cleaned rows
 
 ## How To Run
@@ -196,15 +196,15 @@ After the run finishes, verify:
 From the project root:
 
 ```powershell
-python dataset/run_cleaning_pipeline.py
+python data/run_cleaning_pipeline.py
 ```
 
 ## Outputs
 
 After a successful run you will get:
 
-- `dataset/Teen_Mental_Health_Dataset.cleaned.csv`
-- `dataset/cleaning_summary.json`
+- `data/Teen_Mental_Health_Dataset.cleaned.csv`
+- `data/cleaning_summary.json`
 
 The JSON summary documents:
 

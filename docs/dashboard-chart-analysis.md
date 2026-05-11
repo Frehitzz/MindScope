@@ -4,9 +4,9 @@ This document explains how these three dashboard charts are calculated in the fr
 
 Code source:
 
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:75)
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:96)
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:114)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:75)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:96)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:114)
 
 Validation reference already present in the repo:
 
@@ -62,9 +62,9 @@ Frontend logic:
 
 Relevant code:
 
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:75)
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:89)
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:184)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:75)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:89)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:184)
 
 What the displayed values mean:
 
@@ -111,9 +111,9 @@ Frontend logic:
 
 Relevant code:
 
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:96)
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:107)
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:287)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:96)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:107)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:287)
 
 What the displayed values mean:
 
@@ -175,9 +175,9 @@ Frontend logic:
 
 Relevant code:
 
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:114)
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:122)
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:312)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:114)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:122)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:312)
 
 What the displayed values mean:
 

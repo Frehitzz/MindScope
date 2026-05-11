@@ -91,13 +91,13 @@ You need to do that in both places:
 
 File:
 
-- [src/pages/DataTablePage.tsx](/C:/Mycodes/MindScope/src/pages/DataTablePage.tsx:1)
+- [frontend/src/pages/DataTablePage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DataTablePage.tsx:1)
 
 ## Optional typed schema update
 
 If you want your Supabase types to fully match the new view, add the view to:
 
-- [src/types/database.ts](/C:/Mycodes/MindScope/src/types/database.ts:1)
+- [frontend/src/types/database.ts](/C:/Mycodes/MindScope/frontend/src/types/database.ts:1)
 
 For the project to work, this is not strictly required if the selected columns match the existing `DataTableRow` shape, but it is the cleaner long-term option.
 

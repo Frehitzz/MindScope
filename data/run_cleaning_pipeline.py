@@ -36,7 +36,7 @@ def main() -> None:
     # stop if database keys are missing
     if not settings["supabase_url"] or not settings["supabase_key"]:
         raise RuntimeError(
-            "Missing SUPABASE_URL or SUPABASE_KEY. Set them in dataset/.env or the environment."
+            "Missing SUPABASE_URL or SUPABASE_KEY. Set them in data/.env or the environment."
         )
 
     # load the raw data and clean it

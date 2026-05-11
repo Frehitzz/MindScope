@@ -8,8 +8,8 @@ Before this fix, both dashboard pages were pulling raw rows from `teen_mental_he
 
 Affected files before the fix:
 
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:1)
-- [src/pages/InsightPage.tsx](/C:/Mycodes/MindScope/src/pages/InsightPage.tsx:1)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:1)
+- [frontend/src/pages/InsightPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/InsightPage.tsx:1)
 
 The old pattern looked like this:
 
@@ -92,7 +92,7 @@ These functions now let Supabase calculate:
 
 New file:
 
-- [src/lib/dashboardAggregates.ts](/C:/Mycodes/MindScope/src/lib/dashboardAggregates.ts:1)
+- [frontend/src/lib/dashboardAggregates.ts](/C:/Mycodes/MindScope/frontend/src/lib/dashboardAggregates.ts:1)
 
 This module now:
 
@@ -106,8 +106,8 @@ This file is the new shared data-access layer for the dashboard aggregate views.
 
 Updated files:
 
-- [src/types/database.ts](/C:/Mycodes/MindScope/src/types/database.ts:155)
-- [src/types/teenMentalHealth.ts](/C:/Mycodes/MindScope/src/types/teenMentalHealth.ts:39)
+- [frontend/src/types/database.ts](/C:/Mycodes/MindScope/frontend/src/types/database.ts:155)
+- [frontend/src/types/teenMentalHealth.ts](/C:/Mycodes/MindScope/frontend/src/types/teenMentalHealth.ts:39)
 
 These changes were necessary so the frontend knows the return shape of each RPC function at compile time.
 
@@ -121,7 +121,7 @@ Without this typing:
 
 Updated file:
 
-- [src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/src/pages/DashboardPage.tsx:1)
+- [frontend/src/pages/DashboardPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/DashboardPage.tsx:1)
 
 What changed:
 
@@ -142,7 +142,7 @@ So the page is now focused on rendering, not calculating.
 
 Updated file:
 
-- [src/pages/InsightPage.tsx](/C:/Mycodes/MindScope/src/pages/InsightPage.tsx:1)
+- [frontend/src/pages/InsightPage.tsx](/C:/Mycodes/MindScope/frontend/src/pages/InsightPage.tsx:1)
 
 What changed:
 
