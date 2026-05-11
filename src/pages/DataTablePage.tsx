@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useRef, useState } from 'react';
-import { ArrowUpDown, ChevronDown, Search, X, Download } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, Search, X, Download, SlidersHorizontal } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SectionHeader } from '../components/SectionHeader';
 import { supabase } from '../lib/supabase';
@@ -92,6 +92,7 @@ export function DataTablePage() {
   const [interactionFilter, setInteractionFilter] = useState('All');
   const [depressionFilter, setDepressionFilter] = useState('All');
   const [usageFilter, setUsageFilter] = useState('All');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -215,6 +216,15 @@ export function DataTablePage() {
     depressionFilter !== 'All' ||
     usageFilter !== 'All';
 
+  const clearFilters = () => {
+    setSearch('');
+    setPlatformFilter('All');
+    setInteractionFilter('All');
+    setDepressionFilter('All');
+    setUsageFilter('All');
+    setCurrentPage(1);
+  };
+
   const formatDepressionStatus = (value: number | null) => {
     if (value === 1) return 'Depressed';
     if (value === 0) return 'Not Depressed';
@@ -332,8 +342,8 @@ export function DataTablePage() {
       </div>
 
       <div className="sticky -top-5 z-20 bg-cream pt-5 pb-4 mb-2 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
-        <div className="flex flex-1 items-center gap-3 flex-wrap">
-          <div className="relative w-full sm:w-48 shrink-0">
+        <div className="flex flex-1 items-center gap-3 flex-wrap md:flex-nowrap">
+          <div className="relative min-w-0 flex-1 sm:w-48 shrink-0">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
               id="table-search"
@@ -355,7 +365,24 @@ export function DataTablePage() {
             />
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setMobileFiltersOpen(true)}
+            className="
+              flex min-h-[38px] shrink-0 items-center gap-2 rounded-md border border-mist-light bg-card px-3 py-2
+              font-body text-xs font-semibold text-forest transition-colors duration-200 hover:bg-cream md:hidden
+            "
+          >
+            <SlidersHorizontal size={14} />
+            Filters
+            {hasActiveFilters && (
+              <span className="rounded-full bg-sage px-1.5 py-0.5 text-[10px] leading-none text-white">
+                Active
+              </span>
+            )}
+          </button>
+
+          <div className="hidden md:flex items-center gap-3 flex-wrap">
             <FilterSelect
               label="Platform:"
               value={platformFilter}
@@ -410,17 +437,10 @@ export function DataTablePage() {
             />
           </div>
 
-          <div className="shrink-0 ml-auto sm:ml-0">
+          <div className="hidden md:block shrink-0 ml-auto sm:ml-0">
             <button
               type="button"
-              onClick={() => {
-                setSearch('');
-                setPlatformFilter('All');
-                setInteractionFilter('All');
-                setDepressionFilter('All');
-                setUsageFilter('All');
-                setCurrentPage(1);
-              }}
+              onClick={clearFilters}
               className="
                 flex items-center justify-center p-2.5 rounded-md border border-mist-light bg-card
                 text-text-muted hover:text-dusk hover:bg-cream
@@ -439,6 +459,116 @@ export function DataTablePage() {
           {loading ? 'Loading records...' : `${rows.length} shown of ${totalCount} records`}
         </span>
       </div>
+
+      {mobileFiltersOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <button
+            type="button"
+            aria-label="Close filters"
+            className="absolute inset-0 bg-forest/30 backdrop-blur-[2px]"
+            onClick={() => setMobileFiltersOpen(false)}
+          />
+          <div className="absolute inset-x-0 bottom-10 rounded-t-3xl border border-mist-light bg-card px-5 pb-6 pt-5 shadow-card-hover">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="font-display text-xl font-medium text-forest">Filters</h2>
+                <p className="font-body text-xs text-text-muted">
+                  Refine the data table for mobile view.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileFiltersOpen(false)}
+                className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full border border-mist-light text-text-muted transition-colors duration-200 hover:bg-cream hover:text-dusk"
+                aria-label="Close filters"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <FilterSelect
+                  label="Platform:"
+                  value={platformFilter}
+                  options={[
+                    { value: 'All', label: 'All' },
+                    { value: 'TikTok', label: 'TikTok' },
+                    { value: 'Instagram', label: 'Instagram' },
+                    { value: 'Both', label: 'Both' },
+                  ]}
+                  onChange={(v) => { setPlatformFilter(v); setCurrentPage(1); }}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <FilterSelect
+                  label="Interaction:"
+                  value={interactionFilter}
+                  options={[
+                    { value: 'All', label: 'All' },
+                    { value: 'High', label: 'High' },
+                    { value: 'Medium', label: 'Medium' },
+                    { value: 'Low', label: 'Low' },
+                  ]}
+                  onChange={(v) => { setInteractionFilter(v); setCurrentPage(1); }}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <FilterSelect
+                  label="Depression:"
+                  value={depressionFilter}
+                  options={[
+                    { value: 'All', label: 'All' },
+                    { value: 'Depressed', label: 'Depressed' },
+                    { value: 'Not Depressed', label: 'Not Depressed' },
+                  ]}
+                  onChange={(v) => { setDepressionFilter(v); setCurrentPage(1); }}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <FilterSelect
+                  label="Usage:"
+                  value={usageFilter}
+                  options={[
+                    { value: 'All', label: 'All' },
+                    { value: '0-2h', label: '0-2h' },
+                    { value: '3-5h', label: '3-5h' },
+                    { value: '6h+', label: '6h+' },
+                  ]}
+                  onChange={(v) => { setUsageFilter(v); setCurrentPage(1); }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={clearFilters}
+                disabled={!hasActiveFilters}
+                className="
+                  flex-1 rounded-md border border-mist-light bg-cream px-4 py-3 font-body text-sm font-medium
+                  text-text-muted transition-colors duration-200 hover:bg-mist-light/40 disabled:cursor-not-allowed disabled:opacity-50
+                "
+              >
+                Clear all
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileFiltersOpen(false)}
+                className="
+                  flex-1 rounded-md bg-sage px-4 py-3 font-body text-sm font-semibold text-white
+                  transition-colors duration-200 hover:bg-sage-dark
+                "
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-card border border-mist-light rounded-md shadow-card overflow-hidden">
         <div className="overflow-x-auto">

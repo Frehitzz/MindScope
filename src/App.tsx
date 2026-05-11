@@ -13,7 +13,7 @@ function App() {
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Topbar />
-          <main className="flex-1 overflow-y-auto p-5 space-y-7">
+          <main className="flex-1 overflow-y-auto p-5 pb-24 md:pb-5 space-y-7">
             <Routes>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/insight" element={<InsightPage />} />
