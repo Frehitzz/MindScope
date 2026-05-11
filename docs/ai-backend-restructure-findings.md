@@ -19,8 +19,8 @@ This structure should be the first focus before AI feature work starts.
 Right now the repo is still partly in transition:
 
 - the frontend app has already been moved into `frontend/`
-- empty `backend/` and `data/` folders already exist
-- the old `dataset/` folder still exists and has not been moved yet
+- `data/` now owns the dataset files and Python scripts
+- `backend/` exists as a reserved folder for future server code
 - some docs and paths still reflect the old root-level structure
 
 Before implementing the AI feature, the project should first be cleaned up so deployment roots, env-file ownership, and file locations are predictable.
@@ -29,8 +29,8 @@ Before implementing the AI feature, the project should first be cleaned up so de
 
 - [x] Create the top-level folders: `frontend/`, `backend/`, and `data/`.
 - [x] Move the current Vite frontend files into `frontend/`.
-- [ ] Move the current `dataset/` contents into `data/`.
-- [ ] Remove the old `dataset/` folder after its contents are moved.
+- [x] Move the current `dataset/` contents into `data/`.
+- [x] Remove the old `dataset/` folder after its contents are moved.
 - [ ] Keep `backend/` as the reserved root for the future Express service.
 - [ ] Decide whether frontend API helpers should live in `frontend/src/api/` or stay in `frontend/src/lib/`.
 - [ ] If `supabase.ts` is moved, update imports in the frontend.
@@ -55,7 +55,6 @@ Before implementing the AI feature, the project should first be cleaned up so de
 
 ### Still Pending
 
-- The dataset scripts and CSV files are still under `dataset/`, not `data/`.
 - Documentation still needs path cleanup.
 - Environment ownership is not fully separated by runtime yet.
 - The backend folder exists, but it is only a placeholder right now.
