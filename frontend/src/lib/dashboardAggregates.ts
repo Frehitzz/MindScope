@@ -8,7 +8,7 @@ import {
   type PlatformData,
   type ScatterPoint,
 } from './analytics';
-import { supabase } from './supabase';
+import { supabase } from '../api/supabase';
 
 export type DashboardAggregateData = {
   stats: DashboardStat[];

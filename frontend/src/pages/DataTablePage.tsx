@@ -2,7 +2,7 @@ import { useDeferredValue, useEffect, useRef, useState } from 'react';
 import { ArrowUpDown, ChevronDown, Search, X, Download, SlidersHorizontal } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SectionHeader } from '../components/SectionHeader';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../api/supabase';
 import type { DataTableRow } from '../types/teenMentalHealth';
 
 type SortField = keyof DataTableRow;

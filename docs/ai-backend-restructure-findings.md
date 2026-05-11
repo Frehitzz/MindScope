@@ -31,9 +31,9 @@ Before implementing the AI feature, the project should first be cleaned up so de
 - [x] Move the current Vite frontend files into `frontend/`.
 - [x] Move the current `dataset/` contents into `data/`.
 - [x] Remove the old `dataset/` folder after its contents are moved.
-- [ ] Keep `backend/` as the reserved root for the future Express service.
-- [ ] Decide whether frontend API helpers should live in `frontend/src/api/` or stay in `frontend/src/lib/`.
-- [ ] If `supabase.ts` is moved, update imports in the frontend.
+- [x] Keep `backend/` as the reserved root for the future Express service.
+- [x] Decide whether frontend API helpers should live in `frontend/src/api/` or stay in `frontend/src/lib/`.
+- [x] If `supabase.ts` is moved, update imports in the frontend.
 - [ ] Split env-file ownership by folder so each runtime has its own env location.
 - [ ] Keep only browser-safe variables in `frontend/.env`.
 - [ ] Reserve backend-only secrets for `backend/.env`.
@@ -52,12 +52,13 @@ Before implementing the AI feature, the project should first be cleaned up so de
 - The frontend app is no longer at the repo root.
 - The frontend package files now belong under `frontend/`.
 - The project now has a visible place for frontend, backend, and data concerns.
+- `frontend/src/api/` is now the chosen home for frontend API helpers.
 
 ### Still Pending
 
 - Documentation still needs path cleanup.
 - Environment ownership is not fully separated by runtime yet.
-- The backend folder exists, but it is only a placeholder right now.
+- The backend folder is still only a placeholder and does not contain server code yet.
 
 ## What Needs To Be True Before AI Work Starts
 
@@ -145,7 +146,6 @@ The following areas still need structure-related cleanup:
 - commands in `README.md` that still assume frontend files are at the repo root
 - commands in `README.md` and docs that still reference `dataset/`
 - markdown links in docs that still reference old file locations
-- any frontend imports if `supabase.ts` is moved from `lib/` to `api/`
 
 ## Deployment Readiness
 
