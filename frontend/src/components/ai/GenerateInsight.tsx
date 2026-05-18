@@ -52,6 +52,19 @@ export default function GenerateInsight({
     return 'Unable to generate an insight right now. Please try again.';
   }
 
+  function isRateLimitError(error: unknown) {
+    const status =
+      typeof error === 'object' &&
+      error !== null &&
+      'status' in error &&
+      typeof error.status === 'number'
+        ? error.status
+        : null;
+    const message = error instanceof Error ? error.message : '';
+
+    return status === 429 || getFriendlyErrorMessage(message) !== 'Unable to generate an insight right now. Please try again.';
+  }
+
   useEffect(() => {
     if (!isModalOpen) {
       return undefined;
@@ -93,7 +106,11 @@ export default function GenerateInsight({
     } catch (requestError) {
       const rawMessage =
         requestError instanceof Error ? requestError.message : 'Failed to generate insight.';
-      setError(getFriendlyErrorMessage(rawMessage));
+      setError(
+        isRateLimitError(requestError)
+          ? 'AI insight generation is temporarily busy. Please try again in a moment.'
+          : getFriendlyErrorMessage(rawMessage)
+      );
     } finally {
       setIsLoading(false);
     }

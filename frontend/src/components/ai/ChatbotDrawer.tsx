@@ -33,6 +33,26 @@ const initialMessages: ChatMessage[] = [
   },
 ];
 
+function isRateLimitError(error: unknown) {
+  const status =
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    typeof error.status === 'number'
+      ? error.status
+      : null;
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+
+  return (
+    status === 429 ||
+    message.includes('too many requests') ||
+    message.includes('quota exceeded') ||
+    message.includes('rate limit') ||
+    message.includes('resource has been exhausted') ||
+    /\b429\b/.test(message)
+  );
+}
+
 export function ChatbotDrawer() {
   // opens and closes the drawer, trigger to open onClick={() => setOpen(true)
   const [open, setOpen] = useState(false);
@@ -42,8 +62,12 @@ export function ChatbotDrawer() {
   // text input from the textarea is bound to the question state
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
-  // remembers the last question so the retry button can re-send it
   const [lastQuestion, setLastQuestion] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([
+    'Does social media affect depression?',
+    'Average sleep time for teens?',
+    'Screen time vs anxiety levels'
+  ]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,14 +119,12 @@ export function ChatbotDrawer() {
           content: result.answer,
         },
       ]);
+
+      if (result.suggestions && result.suggestions.length > 0) {
+        setSuggestions(result.suggestions);
+      }
     } catch (error) {
-      // check if the error is a rate-limit (too many requests)
-      const message = error instanceof Error ? error.message : '';
-      const isRateLimit =
-        message.toLowerCase().includes('429') ||
-        message.toLowerCase().includes('too many') ||
-        message.toLowerCase().includes('quota') ||
-        message.toLowerCase().includes('rate');
+      const isRateLimit = isRateLimitError(error);
 
       // appends a friendly message instead of the raw error
       setMessages((current) => [
@@ -239,7 +261,29 @@ export function ChatbotDrawer() {
               <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSubmit} className="border-t border-mist-light bg-card p-4">
+            <div className="border-t border-mist-light bg-card px-4 pt-3 pb-1">
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => {
+                      if (!loading) void sendQuestion(suggestion);
+                    }}
+                    disabled={loading}
+                    className="
+                      rounded-full border border-mist-light bg-cream px-3 py-1.5 text-left font-body text-xs text-forest
+                      transition-colors duration-200 hover:border-sage hover:bg-sage-light hover:text-sage-dark
+                      disabled:cursor-not-allowed disabled:opacity-50
+                    "
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="bg-card p-4 pt-2">
               <div className="flex items-end gap-2">
                 <textarea
                   value={question}

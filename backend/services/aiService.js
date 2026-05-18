@@ -78,6 +78,32 @@ function getModel() {
   return genAI.getGenerativeModel({ model: getModelName() });
 }
 
+function normalizeModelError(error, fallbackMessage) {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+
+    if (
+      message.includes('429') ||
+      message.includes('too many requests') ||
+      message.includes('quota exceeded') ||
+      message.includes('rate limit') ||
+      message.includes('resource has been exhausted')
+    ) {
+      error.statusCode = 429;
+    }
+
+    if (!Number.isInteger(error.statusCode)) {
+      error.statusCode = 502;
+    }
+
+    return error;
+  }
+
+  const wrappedError = new Error(fallbackMessage);
+  wrappedError.statusCode = 502;
+  return wrappedError;
+}
+
 // =========== SANITIZATION TOOLS =============
 // - helper functions, prevent the code from crashing if data is missing or "weird"
 function sanitizeString(value, fallback = '') {
@@ -366,11 +392,14 @@ Rules:
 - Sound natural, analytical, and conversational, like a real analytics assistant.
 - Do not sound like documentation, policy text, or API validation.
 - Do not lead with a limitation unless the question is clearly outside the dataset scope.
+- At the very end of your response, you MUST provide exactly 3 short follow-up questions the user could ask next based on this topic.
+- Format the follow-up questions exactly like this on a new line: "SUGGESTIONS: Question 1? | Question 2? | Question 3?"
 
 Response pattern:
 - Sentence 1: lead with the most defensible interpretation from the data.
 - Sentence 2: add supporting comparison, association, or trend if available.
 - Final phrase or sentence: briefly mention the main limitation only if needed.
+- New line and then exactly: SUGGESTIONS: ...
 
 Dataset context:
 ${datasetSummary}
@@ -442,7 +471,14 @@ export const aiService = {
     // step 2: get the ai model
     const model = getModel();
     // step 3: send the prompt and wait for the result
-    const result = await model.generateContent(buildInsightPrompt(sanitizedData));
+    let result;
+
+    try {
+      result = await model.generateContent(buildInsightPrompt(sanitizedData));
+    } catch (error) {
+      throw normalizeModelError(error, 'Failed to generate insight.');
+    }
+
     // step 4: extract the text
     const insight = extractInsightText(result);
 
@@ -473,11 +509,28 @@ export const aiService = {
 
     const datasetSummary = await getDatasetSummary();
     const model = getModel();
-    const result = await model.generateContent(buildQuestionPrompt(cleanedQuestion, datasetSummary));
-    const answer = normalizeQuestionAnswer(extractInsightText(result));
+    let result;
+
+    try {
+      result = await model.generateContent(buildQuestionPrompt(cleanedQuestion, datasetSummary));
+    } catch (error) {
+      throw normalizeModelError(error, 'Failed to answer question.');
+    }
+
+    let rawText = extractInsightText(result);
+
+    let suggestions = [];
+    const suggestionsMatch = rawText.match(/SUGGESTIONS:\s*(.*)/i);
+    if (suggestionsMatch) {
+      suggestions = suggestionsMatch[1].split('|').map((s) => s.trim()).filter(Boolean);
+      rawText = rawText.replace(/SUGGESTIONS:\s*(.*)/i, '').trim();
+    }
+
+    const answer = normalizeQuestionAnswer(rawText);
 
     return {
       answer,
+      suggestions,
       metadata: {
         source: path.basename(DATASET_PATH),
         generatedAt: new Date().toISOString(),

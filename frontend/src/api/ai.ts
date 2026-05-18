@@ -10,6 +10,10 @@ type ApiErrorResponse = {
   message?: string;
 };
 
+type ApiRequestError = Error & {
+  status?: number;
+};
+
 export type InsightRequest = {
   stats: Array<{ label: string; value: string; delta: string }>;
   platformData: {
@@ -34,6 +38,7 @@ export type InsightResponse = {
 
 export type QuestionAnswerResponse = {
   answer: string;
+  suggestions?: string[];
   metadata?: {
     source?: string;
     generatedAt?: string;
@@ -48,7 +53,9 @@ async function parseResponse<T>(response: Response): Promise<T> {
       payload && typeof payload === 'object' && 'message' in payload && typeof payload.message === 'string'
         ? payload.message
         : 'Request failed.';
-    throw new Error(message);
+    const error = new Error(message) as ApiRequestError;
+    error.status = response.status;
+    throw error;
   }
 
   return payload as T;
