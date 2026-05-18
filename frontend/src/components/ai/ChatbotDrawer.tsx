@@ -18,6 +18,8 @@ type ChatMessage = {
   id: string;
   role: 'assistant' | 'user';
   content: string;
+  // true when the error is a rate-limit so the UI can show a retry button
+  isRateLimit?: boolean;
 };
 
 // stores chat history in react state
@@ -40,6 +42,8 @@ export function ChatbotDrawer() {
   // text input from the textarea is bound to the question state
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
+  // remembers the last question so the retry button can re-send it
+  const [lastQuestion, setLastQuestion] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,6 +58,11 @@ export function ChatbotDrawer() {
 
     if (!trimmedQuestion || loading) return;
 
+    await sendQuestion(trimmedQuestion);
+  };
+
+  // extracted so the retry button can call it directly with the same question
+  const sendQuestion = async (trimmedQuestion: string) => {
     const userMessage: ChatMessage = {
       /* Random Universally Unique Identifier
         - a built-in function, that generates a highly unique random
@@ -71,6 +80,7 @@ export function ChatbotDrawer() {
     //apeends the users question
     setMessages((current) => [...current, userMessage]);
     setQuestion('');
+    setLastQuestion(trimmedQuestion);
     setLoading(true);
 
     try {
@@ -86,13 +96,24 @@ export function ChatbotDrawer() {
         },
       ]);
     } catch (error) {
-      // appends the fallback error message
+      // check if the error is a rate-limit (too many requests)
+      const message = error instanceof Error ? error.message : '';
+      const isRateLimit =
+        message.toLowerCase().includes('429') ||
+        message.toLowerCase().includes('too many') ||
+        message.toLowerCase().includes('quota') ||
+        message.toLowerCase().includes('rate');
+
+      // appends a friendly message instead of the raw error
       setMessages((current) => [
         ...current,
         {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: error instanceof Error ? error.message : 'The chatbot could not answer right now.',
+          isRateLimit,
+          content: isRateLimit
+            ? "I'm receiving too many requests right now. Please wait a moment and try again."
+            : 'Sorry, I could not answer that right now. Please try again.',
         },
       ]);
     } finally {
@@ -179,6 +200,26 @@ export function ChatbotDrawer() {
                     `}
                   >
                     {message.content}
+                    {/* retry button — only shows on rate-limit error messages */}
+                    {message.isRateLimit && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // remove the error message, then re-send the last question
+                          setMessages((current) => current.filter((m) => m.id !== message.id));
+                          void sendQuestion(lastQuestion);
+                        }}
+                        disabled={loading}
+                        className="
+                          mt-3 flex items-center gap-1.5 rounded-md border border-sage/40 bg-sage-light
+                          px-3 py-1.5 font-body text-xs font-medium text-sage-dark
+                          transition-colors duration-200 hover:bg-sage/20 disabled:cursor-not-allowed disabled:opacity-50
+                        "
+                      >
+                        <LoaderCircle size={12} className={loading ? 'animate-spin' : ''} />
+                        Retry
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
