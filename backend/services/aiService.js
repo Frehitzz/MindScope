@@ -338,6 +338,10 @@ ${JSON.stringify(data, null, 2)}
 `.trim();
 }
 
+/* ==================================================
+    PROMPT ENGINEERING FOR THE AI Q&A CHATBOT
+   ==================================================
+*/
 function buildQuestionPrompt(question, datasetSummary) {
   return `
 You are MindScope's dataset chatbot.

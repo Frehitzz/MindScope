@@ -22,6 +22,7 @@ function App() {
             </Routes>
           </main>
         </div>
+        {/* Ai chatbot panel */}
         <ChatbotDrawer />
       </div>
     </BrowserRouter>

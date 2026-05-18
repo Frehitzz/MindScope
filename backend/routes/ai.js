@@ -45,7 +45,7 @@ router.post('/summarize-results', async (req, res) => {
 
 /**
  * FEATURE 3: Q&A Contextual Answer
- * Description: Answers user questions using the dataset as context (RAG-lite).
+ * Description: answers user questions using the dataset as context (RAG-lite)
  */
 router.post('/qa', async (req, res) => {
   try {

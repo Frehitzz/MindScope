@@ -1,3 +1,13 @@
+/*
+  ======= frontend controller and ui for that chatbot feature =========
+  this code do these things:
+  - renders the floating chatdbot btn
+  - opens and closes the drawer
+  - stores chat history in react state
+  - stores the current question text
+  - sends the user questionto the backend through aiService.askQuestion()
+  - appends the AI answer or error message back into the chat
+*/
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { LoaderCircle, Send, X } from 'lucide-react';
@@ -10,17 +20,24 @@ type ChatMessage = {
   content: string;
 };
 
+// stores chat history in react state
+// uses reat state initizalized with a welcome mesage
+// to store the list of message objects
 const initialMessages: ChatMessage[] = [
   {
     id: 'welcome',
     role: 'assistant',
-    content: 'Hi! I am Mindyy. Ask me about the MindScope teen mental health',
+    content: 'Hi! I am Cryztynn. Ask me about the MindScope teen mental health',
   },
 ];
 
 export function ChatbotDrawer() {
+  // opens and closes the drawer, trigger to open onClick={() => setOpen(true)
   const [open, setOpen] = useState(false);
+  // inside ChatbotDrawer component:
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  // stores the current question text
+  // text input from the textarea is bound to the question state
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -38,17 +55,28 @@ export function ChatbotDrawer() {
     if (!trimmedQuestion || loading) return;
 
     const userMessage: ChatMessage = {
+      /* Random Universally Unique Identifier
+        - a built-in function, that generates a highly unique random
+          string of characters everytime you call it
+       why do we use:
+        1. every message needs a unique id, that will use for rendering,
+            when reats renders a list of items using a loop like
+            "messages.map(...)"
+      */
       id: crypto.randomUUID(),
       role: 'user',
       content: trimmedQuestion,
     };
 
+    //apeends the users question
     setMessages((current) => [...current, userMessage]);
     setQuestion('');
     setLoading(true);
 
     try {
+      // sends the user question to the backend through aiService.askQuestion()
       const result = await aiService.askQuestion(trimmedQuestion);
+      // appends the ai answer on success
       setMessages((current) => [
         ...current,
         {
@@ -58,6 +86,7 @@ export function ChatbotDrawer() {
         },
       ]);
     } catch (error) {
+      // appends the fallback error message
       setMessages((current) => [
         ...current,
         {
@@ -73,17 +102,21 @@ export function ChatbotDrawer() {
 
   return (
     <>
+      {/* ======================================
+        RENDERS THE FLOATING CHATBOT BUTTON
+    */} ======================================
       <button
         type="button"
+        // origger the state setOpen
         onClick={() => setOpen(true)}
         className="
-          fixed bottom-6 right-6 z-40 flex h-16 w-16 items-center justify-center rounded-full
+          fixed bottom-6 right-6 z-40 flex h-40 w-40 items-center justify-center rounded-full
           transition-all duration-300 hover:-translate-y-1 hover:scale-105 drop-shadow-lg hover:drop-shadow-xl
           focus:outline-none focus:ring-4 focus:ring-sage/25
         "
         aria-label="Open dataset chatbot"
       >
-        <img src="/images/mindyy_icon.png" alt="Mindyy Chatbot" className="h-full w-full object-contain" />
+        <img src="/images/mindyy_icon.png" alt="Cryztynn Chatbot" className="h-full w-full object-contain" />
       </button>
 
       {open && (
@@ -104,16 +137,17 @@ export function ChatbotDrawer() {
           >
             <div className="flex items-center justify-between gap-3 border-b border-mist-light px-5 py-4">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-mist-light bg-sage-light">
-                  <img src="/images/mindyy_logo.png" alt="Mindyy Logo" className="h-full w-full object-cover" />
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                  <img src="/images/mindyy_logo.png" alt="Cryztynn Logo" className="h-full w-full object-cover drop-shadow-sm" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="font-display text-xl font-medium text-forest">Mindyy</h2>
+                  <h2 className="font-display text-xl font-medium text-forest">Cryztynn</h2>
                   <p className="truncate font-body text-xs text-text-muted">Answers from the cleaned MindScope data</p>
                 </div>
               </div>
               <button
                 type="button"
+                // close drawer chatbot
                 onClick={() => setOpen(false)}
                 className="
                   flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-mist-light
@@ -132,8 +166,8 @@ export function ChatbotDrawer() {
                   className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {message.role === 'assistant' && (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-mist-light bg-sage-light shadow-sm">
-                      <img src="/images/mindyy_logo.png" alt="Mindyy" className="h-full w-full object-cover" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                      <img src="/images/mindyy_logo.png" alt="Cryztynn" className="h-full w-full object-cover scale-[1.7] drop-shadow-sm" />
                     </div>
                   )}
                   <div
@@ -151,8 +185,8 @@ export function ChatbotDrawer() {
 
               {loading && (
                 <div className="flex gap-3 justify-start">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-mist-light bg-sage-light shadow-sm">
-                    <img src="/images/mindyy_logo.png" alt="Mindyy" className="h-full w-full object-cover" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                    <img src="/images/mindyy_logo.png" alt="Cryztynn" className="h-full w-full object-cover scale-[1.7] drop-shadow-sm" />
                   </div>
                   <div className="flex items-center gap-2 rounded-md border border-mist-light bg-card px-4 py-3 text-sm text-text-muted shadow-card">
                     <LoaderCircle size={16} className="animate-spin" />
