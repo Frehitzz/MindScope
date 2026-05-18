@@ -32,6 +32,14 @@ export type InsightResponse = {
   };
 };
 
+export type QuestionAnswerResponse = {
+  answer: string;
+  metadata?: {
+    source?: string;
+    generatedAt?: string;
+  };
+};
+
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json().catch(() => null)) as T | ApiErrorResponse | null;
 
@@ -67,7 +75,7 @@ export const aiService = {
   /**
    * 2. Summarize Query Results
    */
-  async summarizeResults(results: any) {
+  async summarizeResults(results: unknown) {
     // fetch - for sending requests over the internet
     const response = await fetch(`${API_URL}/api/ai/summarize-results`, {
       method: 'POST', // sending data to the server
@@ -80,19 +88,19 @@ export const aiService = {
   /**
    * 3. Q&A about the dataset
    */
-  async askQuestion(question: string, context?: any) {
+  async askQuestion(question: string): Promise<QuestionAnswerResponse> {
     const response = await fetch(`${API_URL}/api/ai/qa`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, context }),
+      body: JSON.stringify({ question }),
     });
-    return await response.json();
+    return parseResponse<QuestionAnswerResponse>(response);
   },
 
   /**
    * 4. Categorize record
    */
-  async categorizeRecord(record: any) {
+  async categorizeRecord(record: unknown) {
     const response = await fetch(`${API_URL}/api/ai/categorize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

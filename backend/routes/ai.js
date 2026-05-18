@@ -48,8 +48,21 @@ router.post('/summarize-results', async (req, res) => {
  * Description: Answers user questions using the dataset as context (RAG-lite).
  */
 router.post('/qa', async (req, res) => {
-  // Placeholder for logic
-  res.status(501).json({ message: 'Q&A feature not yet implemented' });
+  try {
+    const { question } = req.body ?? {};
+
+    if (!question || typeof question !== 'string' || question.trim().length < 3) {
+      return res.status(400).json({ message: 'A question with at least 3 characters is required.' });
+    }
+
+    const result = await aiService.answerQuestion(question);
+    return res.status(200).json(result);
+  } catch (error) {
+    const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
+    return res.status(statusCode).json({
+      message: error instanceof Error ? error.message : 'Failed to answer question.',
+    });
+  }
 });
 
 /**

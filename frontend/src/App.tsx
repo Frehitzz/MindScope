@@ -4,6 +4,7 @@ import { Topbar } from './components/Topbar';
 import { DashboardPage } from './pages/DashboardPage';
 import { InsightPage } from './pages/InsightPage';
 import { DataTablePage } from './pages/DataTablePage';
+import { ChatbotDrawer } from './components/ai/ChatbotDrawer';
 import './App.css';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
             </Routes>
           </main>
         </div>
+        <ChatbotDrawer />
       </div>
     </BrowserRouter>
   );
