@@ -1,4 +1,15 @@
+// ============ THIS FILE DEFINES HTTP ROUTES FOR AI FEATURES ===============
+/*
+  INSIGHT FEATURES
+  - accepts the frontend request
+  - vlaidates that the dashboard payload exists
+  - passes the payload into the AI service
+  - sends the service result back to the frontend
+*/
+
 import express from 'express';
+import { aiService } from '../services/aiService.js';
+
 const router = express.Router();
 
 /**
@@ -6,8 +17,21 @@ const router = express.Router();
  * Description: Generates a natural-language business insight or recommendation based on dashboard data.
  */
 router.post('/insight', async (req, res) => {
-  // Placeholder for logic
-  res.status(501).json({ message: 'Insight feature not yet implemented' });
+  try {
+    const { data } = req.body ?? {};
+
+    if (!data || typeof data !== 'object') {
+      return res.status(400).json({ message: 'A dashboard data payload is required.' });
+    }
+
+    const result = await aiService.generateInsight(data);
+    return res.status(200).json(result);
+  } catch (error) {
+    const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
+    return res.status(statusCode).json({
+      message: error instanceof Error ? error.message : 'Failed to generate insight.',
+    });
+  }
 });
 
 /**

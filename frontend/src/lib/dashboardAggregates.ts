@@ -1,3 +1,9 @@
+/* =======================
+   This file fetches the dashboard's aggregate data from Supabase
+   & converts it into the exact shape used by the dashboard ui and
+   the Ai insight feature
+*/
+
 import {
   buildDashboardStats,
   groupAddictionByPlatform,

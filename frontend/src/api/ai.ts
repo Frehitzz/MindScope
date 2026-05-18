@@ -1,8 +1,50 @@
 /*
   ========== THE DESITINATION (BACKEND URL) ==========
   - this tells the frontend where to find the server
+  - the response type from the backend 
+  - the generateInsight() function that sends the network request
 */
 const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+
+type ApiErrorResponse = {
+  message?: string;
+};
+
+export type InsightRequest = {
+  stats: Array<{ label: string; value: string; delta: string }>;
+  platformData: {
+    labels: string[];
+    addiction: number[];
+    max: number[];
+    min: number[];
+  };
+  interactionData: {
+    labels: string[];
+    values: number[];
+  };
+  scatterData: Array<{ x: number; y: number }>;
+};
+
+export type InsightResponse = {
+  insight: string;
+  metadata?: {
+    generatedAt?: string;
+  };
+};
+
+async function parseResponse<T>(response: Response): Promise<T> {
+  const payload = (await response.json().catch(() => null)) as T | ApiErrorResponse | null;
+
+  if (!response.ok) {
+    const message =
+      payload && typeof payload === 'object' && 'message' in payload && typeof payload.message === 'string'
+        ? payload.message
+        : 'Request failed.';
+    throw new Error(message);
+  }
+
+  return payload as T;
+}
 
 export const aiService = {
   /*
@@ -13,13 +55,13 @@ export const aiService = {
    - groups all the ai features into one place so i can import like this:
      import { aiService } from '../api/ai
   */
-  async generateInsight(dashboardData: any) {
+  async generateInsight(dashboardData: InsightRequest): Promise<InsightResponse> {
     const response = await fetch(`${API_URL}/api/ai/insight`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ data: dashboardData }),
     });
-    return await response.json();
+    return parseResponse<InsightResponse>(response);
   },
 
   /**

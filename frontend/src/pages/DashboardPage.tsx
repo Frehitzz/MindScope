@@ -22,6 +22,7 @@ import { Activity, HeartPulse, Moon, Smartphone, HeartHandshake, TrendingUp } fr
 import { fetchDashboardAggregateData } from '../lib/dashboardAggregates';
 import type { DashboardStat as Stat, InteractionData, PlatformData } from '../lib/analytics';
 
+import GenerateInsight from '../components/ai/GenerateInsight';
 import { StatCard } from '../components/StatCard';
 import { SectionHeader } from '../components/SectionHeader';
 import { ChartCard } from '../components/ChartCard';
@@ -88,6 +89,7 @@ export function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
+        // fetchDashboardAggregateData() - is the supabase connection that have the rpc function used
         const aggregateData = await fetchDashboardAggregateData();
         setStats(aggregateData.stats);
         setPlatformData(aggregateData.platformData);
@@ -173,14 +175,35 @@ export function DashboardPage() {
     },
   };
 
+  const insightPayload = {
+    stats: stats.map((stat) => ({
+      label: stat.label,
+      value: stat.value,
+      delta: stat.delta,
+    })),
+    platformData,
+    interactionData,
+    scatterData: scatterData.map((point) => ({
+      x: Number(point.x),
+      y: Number(point.y),
+    })),
+  };
+
   return (
     <div className="space-y-7">
       {/* Page heading */}
-      <div>
-        <h1 className="font-display text-3xl font-medium text-forest mb-1">Welcome back</h1>
-        <p className="font-body text-sm text-text-muted">
-          Here's an overview of teen wellbeing insights this month.
-        </p>
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="font-display text-3xl font-medium text-forest mb-1">Welcome back</h1>
+            <p className="font-body text-sm text-text-muted">
+              Here's an overview of teen wellbeing insights this month.
+            </p>
+          </div>
+          <div className="lg:pt-1">
+            <GenerateInsight dashboardData={insightPayload} disabled={loading} />
+          </div>
+        </div>
       </div>
 
       {/* Stat cards */}
@@ -404,10 +427,10 @@ export function DashboardPage() {
             </li>
             <li className="flex items-start gap-3 bg-cream rounded-md p-4 border border-mist-light">
               <TrendingUp size={18} className="text-sage shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-forest mb-1">Usage Hours vs. Rate</p>
-                  <p className="text-text-muted text-xs">Tracks how depression rates change in relation to the number of daily hours spent on social media, grouped by rounded hour.</p>
-                </div>
+              <div>
+                <p className="font-medium text-forest mb-1">Usage Hours vs. Rate</p>
+                <p className="text-text-muted text-xs">Tracks how depression rates change in relation to the number of daily hours spent on social media, grouped by rounded hour.</p>
+              </div>
             </li>
           </ul>
         </div>
