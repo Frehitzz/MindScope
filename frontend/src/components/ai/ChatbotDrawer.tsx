@@ -104,19 +104,19 @@ export function ChatbotDrawer() {
     <>
       {/* ======================================
         RENDERS THE FLOATING CHATBOT BUTTON
-    */} ======================================
+      ====================================== */}
+      {/* trigger the state setOpen */}
       <button
         type="button"
-        // origger the state setOpen
         onClick={() => setOpen(true)}
         className="
-          fixed bottom-6 right-6 z-40 flex h-40 w-40 items-center justify-center rounded-full
+          fixed bottom-6 right-6 z-40 flex h-30 w-30 items-center justify-center rounded-full
           transition-all duration-300 hover:-translate-y-1 hover:scale-105 drop-shadow-lg hover:drop-shadow-xl
           focus:outline-none focus:ring-4 focus:ring-sage/25
         "
         aria-label="Open dataset chatbot"
       >
-        <img src="/images/mindyy_icon.png" alt="Cryztynn Chatbot" className="h-full w-full object-contain" />
+        <img src="/images/mindscope_floating_icon.png" alt="Cryztynn Chatbot" className="h-full w-full object-contain" />
       </button>
 
       {open && (
@@ -145,9 +145,9 @@ export function ChatbotDrawer() {
                   <p className="truncate font-body text-xs text-text-muted">Answers from the cleaned MindScope data</p>
                 </div>
               </div>
+              {/* close drawer chatbot */}
               <button
                 type="button"
-                // close drawer chatbot
                 onClick={() => setOpen(false)}
                 className="
                   flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-mist-light
