@@ -118,7 +118,7 @@ export default function GenerateInsight({
 
   return (
     <>
-      <div className="w-full">
+      <div className="w-full lg:w-auto">
         {/*
         renders generate insight button
       */}
@@ -126,7 +126,7 @@ export default function GenerateInsight({
           type="button"
           onClick={handleGenerateInsight}
           disabled={disabled || isLoading || !hasData}
-          className="inline-flex min-h-10 items-center gap-2 rounded-md border border-sage/20 bg-sage px-4 py-2 text-sm font-medium text-white transition hover:bg-sage-dark disabled:cursor-not-allowed disabled:border-mist-light disabled:bg-mist disabled:text-white/80"
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-sage/20 bg-sage px-3 py-2 text-xs font-medium text-white transition hover:bg-sage-dark disabled:cursor-not-allowed disabled:border-mist-light disabled:bg-mist disabled:text-white/80 sm:min-h-10 sm:gap-2 sm:px-4 sm:text-sm"
         >
           {isLoading ? (
             <LoaderCircle size={16} className="animate-spin" />

@@ -190,17 +190,25 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-7 pb-28 md:pb-0">
       {/* Page heading */}
       <div className="space-y-3">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h1 className="font-display text-3xl font-medium text-forest mb-1">Welcome back</h1>
-            <p className="font-body text-sm text-text-muted">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+          <div className="flex items-center justify-between gap-3 lg:block">
+            <h1 className="mb-0 font-display text-[1.65rem] font-medium leading-none text-forest sm:text-3xl lg:mb-1">
+              Welcome back
+            </h1>
+            <div className="shrink-0 lg:hidden">
+              <GenerateInsight dashboardData={insightPayload} disabled={loading} />
+            </div>
+            <p className="hidden font-body text-sm text-text-muted lg:block">
               Here's an overview of teen wellbeing insights this month.
             </p>
           </div>
-          <div className="lg:pt-1">
+          <p className="font-body text-sm text-text-muted lg:hidden">
+            Here's an overview of teen wellbeing insights this month.
+          </p>
+          <div className="hidden lg:pt-1 lg:block">
             <GenerateInsight dashboardData={insightPayload} disabled={loading} />
           </div>
         </div>
