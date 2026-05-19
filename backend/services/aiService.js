@@ -6,7 +6,7 @@
   - sends thr prompt to gemini
   - returns the final AI result plus metadata
 */
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import dotenv from 'dotenv';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -24,7 +24,7 @@ const insightSchema = {
   scatterData: ['x', 'y'],
 };
 
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+const DEFAULT_GROQ_MODEL = 'llama-3.1-8b-instant';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATASET_PATH = path.resolve(__dirname, '../../data/Teen_Mental_Health_Dataset.cleaned.csv');
@@ -62,20 +62,19 @@ let datasetSummaryCache = null;
 // ============== 2. MODEL CONFIGURATION ===========
 // - decides which ai model to use and ensures the api key is valid
 function getModelName() {
-  return process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
+  return process.env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL;
 }
 
-function getModel() {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+function getGroqClient() {
+  const apiKey = process.env.GROQ_API_KEY?.trim();
 
   if (!apiKey) {
-    const error = new Error('GEMINI_API_KEY is not configured.');
+    const error = new Error('GROQ_API_KEY is not configured.');
     error.statusCode = 500;
     throw error;
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  return genAI.getGenerativeModel({ model: getModelName() });
+  return new Groq({ apiKey });
 }
 
 function normalizeModelError(error, fallbackMessage) {
@@ -91,7 +90,7 @@ function normalizeModelError(error, fallbackMessage) {
     ) {
       error.statusCode = 429;
 
-      error.message = "The Google Gemini AI service is currently receiving too many requests from this free tier account. Please wait a minute and try again.";
+      error.message = "The Groq AI service is currently receiving too many requests from this free tier account. Please wait a minute and try again.";
     } else if (!Number.isInteger(error.statusCode)) {
       error.statusCode = 502;
     }
@@ -411,7 +410,7 @@ ${question}
 
 // cleans up the text response coming back from the AI
 function extractInsightText(response) {
-  const text = response?.response?.text?.();
+  const text = response?.choices?.[0]?.message?.content;
   const cleaned = typeof text === 'string' ? text.trim().replace(/\s+/g, ' ') : '';
 
   if (!cleaned) {
@@ -469,12 +468,15 @@ export const aiService = {
     // step 1: clean the data
     const sanitizedData = sanitizeInsightPayload(data);
     // step 2: get the ai model
-    const model = getModel();
+    const groq = getGroqClient();
     // step 3: send the prompt and wait for the result
     let result;
 
     try {
-      result = await model.generateContent(buildInsightPrompt(sanitizedData));
+      result = await groq.chat.completions.create({
+        messages: [{ role: 'user', content: buildInsightPrompt(sanitizedData) }],
+        model: getModelName(),
+      });
     } catch (error) {
       throw normalizeModelError(error, 'Failed to generate insight.');
     }
@@ -508,11 +510,14 @@ export const aiService = {
     }
 
     const datasetSummary = await getDatasetSummary();
-    const model = getModel();
+    const groq = getGroqClient();
     let result;
 
     try {
-      result = await model.generateContent(buildQuestionPrompt(cleanedQuestion, datasetSummary));
+      result = await groq.chat.completions.create({
+        messages: [{ role: 'user', content: buildQuestionPrompt(cleanedQuestion, datasetSummary) }],
+        model: getModelName(),
+      });
     } catch (error) {
       throw normalizeModelError(error, 'Failed to answer question.');
     }
