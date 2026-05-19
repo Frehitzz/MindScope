@@ -37,9 +37,9 @@ const initialMessages: ChatMessage[] = [
 function isRateLimitError(error: unknown) {
   const status =
     typeof error === 'object' &&
-    error !== null &&
-    'status' in error &&
-    typeof error.status === 'number'
+      error !== null &&
+      'status' in error &&
+      typeof error.status === 'number'
       ? error.status
       : null;
   const message = error instanceof Error ? error.message.toLowerCase() : '';
@@ -209,11 +209,12 @@ export function ChatbotDrawer() {
         RENDERS THE FLOATING CHATBOT BUTTON
       ====================================== */}
       {/* trigger the state setOpen */}
+      {!open && (
       <button
         type="button"
         onClick={() => setOpen(true)}
         className="
-          fixed bottom-6 right-6 z-40 flex h-30 w-30 items-center justify-center rounded-full
+          fixed bottom-24 right-6 z-[60] flex h-30 w-30 items-center justify-center rounded-full md:bottom-6 md:z-40
           transition-all duration-300 hover:-translate-y-1 hover:scale-105 drop-shadow-lg hover:drop-shadow-xl
           focus:outline-none focus:ring-4 focus:ring-sage/25
         "
@@ -221,6 +222,7 @@ export function ChatbotDrawer() {
       >
         <img src="/images/mindscope_floating_icon.png" alt="Cryztynn Chatbot" className="h-full w-full object-contain" />
       </button>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-50">
