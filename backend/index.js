@@ -22,8 +22,18 @@ const port = process.env.PORT || 3001;
 /*
   Restricts access so that only the frontend(localhost:5173) can make request
 */
+// Parse FRONTEND_ORIGIN — supports a single URL or a comma-separated list
+// e.g. FRONTEND_ORIGIN=https://mindscope.vercel.app,http://localhost:5173
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173'
+  origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
+  // Expose rate-limit headers so the browser JS can read RateLimit-Reset
+  // and build the countdown timer without relying solely on the JSON body.
+  exposedHeaders: ['RateLimit-Reset', 'RateLimit-Limit', 'RateLimit-Remaining'],
 }));
 
 /*

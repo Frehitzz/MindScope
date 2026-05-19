@@ -56,11 +56,14 @@ function isRateLimitError(error: unknown) {
 
 function RateLimitCountdown({ resetTime, onRetry, loading }: { resetTime?: number, onRetry: () => void, loading: boolean }) {
   const [timeLeft, setTimeLeft] = useState(() => {
-    if (resetTime) {
+    // Use the server-provided reset timestamp when available;
+    // otherwise fall back to a full 30-minute window so the countdown
+    // always appears on production even if headers are stripped.
+    if (resetTime && resetTime > 0) {
       const remaining = Math.max(0, resetTime * 1000 - Date.now());
       return Math.floor(remaining / 1000);
     }
-    return 30 * 60; // 30 minutes fallback
+    return 30 * 60; // 30-minute fallback
   });
 
   useEffect(() => {
@@ -77,7 +80,7 @@ function RateLimitCountdown({ resetTime, onRetry, loading }: { resetTime?: numbe
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timeLeft]);
+  }, []); // run once on mount — timeLeft is managed internally
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
@@ -85,7 +88,7 @@ function RateLimitCountdown({ resetTime, onRetry, loading }: { resetTime?: numbe
   if (timeLeft > 0) {
     return (
       <div className="mt-3 flex items-center justify-center rounded-md border border-amber-500/40 bg-amber-50/80 px-3 py-2 font-body text-xs font-medium text-amber-700">
-        Try again in {minutes}:{seconds.toString().padStart(2, '0')}
+        ⏳ Try again in {minutes}:{seconds.toString().padStart(2, '0')}
       </div>
     );
   }
@@ -102,7 +105,7 @@ function RateLimitCountdown({ resetTime, onRetry, loading }: { resetTime?: numbe
       "
     >
       <LoaderCircle size={12} className={loading ? 'animate-spin' : ''} />
-      Retry
+      Retry now
     </button>
   );
 }
@@ -279,8 +282,8 @@ export function ChatbotDrawer() {
                     `}
                   >
                     {message.content}
-                    {/* retry button / countdown — only shows on rate-limit error messages */}
-                    {message.isRateLimit && message.resetTime ? (
+                    {/* countdown timer — always shows for rate-limit errors regardless of resetTime */}
+                    {message.isRateLimit && (
                       <RateLimitCountdown
                         resetTime={message.resetTime}
                         loading={loading}
@@ -289,24 +292,7 @@ export function ChatbotDrawer() {
                           void sendQuestion(lastQuestion);
                         }}
                       />
-                    ) : message.isRateLimit ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMessages((current) => current.filter((m) => m.id !== message.id));
-                          void sendQuestion(lastQuestion);
-                        }}
-                        disabled={loading}
-                        className="
-                          mt-3 flex items-center gap-1.5 rounded-md border border-sage/40 bg-sage-light
-                          px-3 py-1.5 font-body text-xs font-medium text-sage-dark
-                          transition-colors duration-200 hover:bg-sage/20 disabled:cursor-not-allowed disabled:opacity-50
-                        "
-                      >
-                        <LoaderCircle size={12} className={loading ? 'animate-spin' : ''} />
-                        Retry
-                      </button>
-                    ) : null}
+                    )}
                   </div>
                 </div>
               ))}

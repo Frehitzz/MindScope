@@ -51,8 +51,14 @@ router.post('/summarize-results', async (req, res) => {
 const qaRateLimiter = rateLimit({
   windowMs: 30 * 60 * 1000, // 30 minutes
   max: 10, // limit each IP to 10 requests per windowMs
-  message: {
-    message: 'You have reached the limit of 10 questions per 30 minutes. Please wait a while before asking more to prevent API abuse.',
+  // Always include resetTime in the JSON body so the frontend countdown works
+  // even when RateLimit-* headers are stripped by a CDN or CORS config on production.
+  handler: (req, res, next, options) => {
+    const resetTime = Math.ceil(Date.now() / 1000) + Math.ceil(options.windowMs / 1000);
+    res.status(429).json({
+      message: 'You have reached the limit of 10 questions per 30 minutes. Please wait a while before asking more to prevent API abuse.',
+      resetTime, // Unix timestamp (seconds) — tells the client exactly when the window resets
+    });
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
