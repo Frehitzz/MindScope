@@ -90,9 +90,9 @@ function normalizeModelError(error, fallbackMessage) {
       message.includes('resource has been exhausted')
     ) {
       error.statusCode = 429;
-    }
 
-    if (!Number.isInteger(error.statusCode)) {
+      error.message = "The Google Gemini AI service is currently receiving too many requests from this free tier account. Please wait a minute and try again.";
+    } else if (!Number.isInteger(error.statusCode)) {
       error.statusCode = 502;
     }
 

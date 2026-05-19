@@ -75,9 +75,13 @@ router.post('/qa', qaRateLimiter, async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
-    return res.status(statusCode).json({
+    const payload = {
       message: error instanceof Error ? error.message : 'Failed to answer question.',
-    });
+    };
+    if (error.resetTime) {
+      payload.resetTime = error.resetTime;
+    }
+    return res.status(statusCode).json(payload);
   }
 });
 

@@ -280,7 +280,7 @@ export function ChatbotDrawer() {
                   >
                     {message.content}
                     {/* retry button / countdown — only shows on rate-limit error messages */}
-                    {message.isRateLimit && (
+                    {message.isRateLimit && message.resetTime ? (
                       <RateLimitCountdown
                         resetTime={message.resetTime}
                         loading={loading}
@@ -289,7 +289,24 @@ export function ChatbotDrawer() {
                           void sendQuestion(lastQuestion);
                         }}
                       />
-                    )}
+                    ) : message.isRateLimit ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMessages((current) => current.filter((m) => m.id !== message.id));
+                          void sendQuestion(lastQuestion);
+                        }}
+                        disabled={loading}
+                        className="
+                          mt-3 flex items-center gap-1.5 rounded-md border border-sage/40 bg-sage-light
+                          px-3 py-1.5 font-body text-xs font-medium text-sage-dark
+                          transition-colors duration-200 hover:bg-sage/20 disabled:cursor-not-allowed disabled:opacity-50
+                        "
+                      >
+                        <LoaderCircle size={12} className={loading ? 'animate-spin' : ''} />
+                        Retry
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               ))}

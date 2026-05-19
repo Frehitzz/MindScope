@@ -61,6 +61,8 @@ async function parseResponse<T>(response: Response): Promise<T> {
       const resetHeader = response.headers.get('RateLimit-Reset');
       if (resetHeader) {
         error.resetTime = parseInt(resetHeader, 10);
+      } else if (payload && typeof payload === 'object' && 'resetTime' in payload && typeof payload.resetTime === 'number') {
+        error.resetTime = payload.resetTime;
       }
     }
     
