@@ -8,6 +8,7 @@
 */
 
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { aiService } from '../services/aiService.js';
 
 const router = express.Router();
@@ -44,10 +45,25 @@ router.post('/summarize-results', async (req, res) => {
 });
 
 /**
+ * Rate Limiter for Q&A Chatbot
+ * Limits to 10 requests per 30 minutes to prevent abuse on free tier
+ */
+const qaRateLimiter = rateLimit({
+  windowMs: 30 * 60 * 1000, // 30 minutes
+  max: 10, // limit each IP to 10 requests per windowMs
+  message: {
+    message: 'You have reached the limit of 10 questions per 30 minutes. Please wait a while before asking more to prevent API abuse.',
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skipFailedRequests: true, // Do not count requests that result in an error (e.g. AI fails to answer)
+});
+
+/**
  * FEATURE 3: Q&A Contextual Answer
  * Description: answers user questions using the dataset as context (RAG-lite)
  */
-router.post('/qa', async (req, res) => {
+router.post('/qa', qaRateLimiter, async (req, res) => {
   try {
     const { question } = req.body ?? {};
 

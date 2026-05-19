@@ -20,6 +20,7 @@ type ChatMessage = {
   content: string;
   // true when the error is a rate-limit so the UI can show a retry button
   isRateLimit?: boolean;
+  resetTime?: number;
 };
 
 // stores chat history in react state
@@ -50,6 +51,59 @@ function isRateLimitError(error: unknown) {
     message.includes('rate limit') ||
     message.includes('resource has been exhausted') ||
     /\b429\b/.test(message)
+  );
+}
+
+function RateLimitCountdown({ resetTime, onRetry, loading }: { resetTime?: number, onRetry: () => void, loading: boolean }) {
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (resetTime) {
+      const remaining = Math.max(0, resetTime * 1000 - Date.now());
+      return Math.floor(remaining / 1000);
+    }
+    return 30 * 60; // 30 minutes fallback
+  });
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timeLeft]);
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+
+  if (timeLeft > 0) {
+    return (
+      <div className="mt-3 flex items-center justify-center rounded-md border border-amber-500/40 bg-amber-50/80 px-3 py-2 font-body text-xs font-medium text-amber-700">
+        Try again in {minutes}:{seconds.toString().padStart(2, '0')}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onRetry}
+      disabled={loading}
+      className="
+        mt-3 flex items-center gap-1.5 rounded-md border border-sage/40 bg-sage-light
+        px-3 py-1.5 font-body text-xs font-medium text-sage-dark
+        transition-colors duration-200 hover:bg-sage/20 disabled:cursor-not-allowed disabled:opacity-50
+      "
+    >
+      <LoaderCircle size={12} className={loading ? 'animate-spin' : ''} />
+      Retry
+    </button>
   );
 }
 
@@ -125,6 +179,8 @@ export function ChatbotDrawer() {
       }
     } catch (error) {
       const isRateLimit = isRateLimitError(error);
+      const errorMessage = error instanceof Error ? error.message : '';
+      const resetTime = error !== null && typeof error === 'object' && 'resetTime' in error && typeof (error as any).resetTime === 'number' ? (error as any).resetTime : undefined;
 
       // appends a friendly message instead of the raw error
       setMessages((current) => [
@@ -133,8 +189,9 @@ export function ChatbotDrawer() {
           id: crypto.randomUUID(),
           role: 'assistant',
           isRateLimit,
+          resetTime,
           content: isRateLimit
-            ? "I'm receiving too many requests right now. Please wait a moment and try again."
+            ? errorMessage || "You have reached the limit of 10 questions per 30 minutes. Please wait a while before asking more to prevent API abuse."
             : 'Sorry, I could not answer that right now. Please try again.',
         },
       ]);
@@ -222,25 +279,16 @@ export function ChatbotDrawer() {
                     `}
                   >
                     {message.content}
-                    {/* retry button — only shows on rate-limit error messages */}
+                    {/* retry button / countdown — only shows on rate-limit error messages */}
                     {message.isRateLimit && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // remove the error message, then re-send the last question
+                      <RateLimitCountdown
+                        resetTime={message.resetTime}
+                        loading={loading}
+                        onRetry={() => {
                           setMessages((current) => current.filter((m) => m.id !== message.id));
                           void sendQuestion(lastQuestion);
                         }}
-                        disabled={loading}
-                        className="
-                          mt-3 flex items-center gap-1.5 rounded-md border border-sage/40 bg-sage-light
-                          px-3 py-1.5 font-body text-xs font-medium text-sage-dark
-                          transition-colors duration-200 hover:bg-sage/20 disabled:cursor-not-allowed disabled:opacity-50
-                        "
-                      >
-                        <LoaderCircle size={12} className={loading ? 'animate-spin' : ''} />
-                        Retry
-                      </button>
+                      />
                     )}
                   </div>
                 </div>

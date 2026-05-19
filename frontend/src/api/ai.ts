@@ -12,6 +12,7 @@ type ApiErrorResponse = {
 
 type ApiRequestError = Error & {
   status?: number;
+  resetTime?: number;
 };
 
 export type InsightRequest = {
@@ -55,6 +56,14 @@ async function parseResponse<T>(response: Response): Promise<T> {
         : 'Request failed.';
     const error = new Error(message) as ApiRequestError;
     error.status = response.status;
+    
+    if (response.status === 429) {
+      const resetHeader = response.headers.get('RateLimit-Reset');
+      if (resetHeader) {
+        error.resetTime = parseInt(resetHeader, 10);
+      }
+    }
+    
     throw error;
   }
 
