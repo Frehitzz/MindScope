@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Cloud,
   CloudDrizzle,
@@ -125,7 +125,9 @@ export function Topbar() {
   const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>('loading');
   const [weather, setWeather] = useState<WeatherState | null>(null);
   const [weatherNotice, setWeatherNotice] = useState<WeatherNotice | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+  const locationLabelRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
@@ -135,53 +137,89 @@ export function Topbar() {
     }
 
     let cancelled = false;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+    const fetchWeather = async (
+      latitude: number,
+      longitude: number,
+      shouldFetchLocation: boolean,
+      isPollRefresh = false,
+    ) => {
+      if (isPollRefresh && !cancelled) {
+        setIsRefreshing(true);
+      }
+
+      try {
+      const weatherResponse = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,is_day&temperature_unit=celsius&timezone=auto`,
+      );
+
+      if (!weatherResponse.ok) {
+        throw new Error('Weather request failed.');
+      }
+
+      const weatherJson = (await weatherResponse.json()) as CurrentWeatherResponse;
+      const current = weatherJson.current;
+
+      if (typeof current?.temperature_2m !== 'number' || typeof current.is_day !== 'number') {
+        throw new Error('Weather data was incomplete.');
+      }
+
+      let locationLabel = locationLabelRef.current ?? 'Location unavailable';
+
+      if (shouldFetchLocation || !locationLabelRef.current) {
+        const locationResponse = await fetch(
+          `${backendUrl}/api/weather/location?latitude=${latitude}&longitude=${longitude}`,
+        );
+        const locationJson = locationResponse.ok
+          ? ((await locationResponse.json().catch(() => null)) as { locationLabel?: string; place?: ReverseGeocodeResult | null } | null)
+          : null;
+        const nearestPlace = locationJson?.place ?? null;
+        locationLabel = locationJson?.locationLabel ?? formatLocationLabel(nearestPlace);
+        locationLabelRef.current = locationLabel;
+      }
+
+      const weatherVisual = getWeatherVisual(current.weather_code, current.is_day === 1);
+
+      if (cancelled) {
+        return;
+      }
+
+      setWeather({
+        temperature: current.temperature_2m,
+        humidity: typeof current.relative_humidity_2m === 'number' ? current.relative_humidity_2m : null,
+        description: weatherVisual.description,
+        locationLabel,
+        visual: weatherVisual.visual,
+      });
+      setWeatherNotice(null);
+      setWeatherStatus('ready');
+      } finally {
+        if (!cancelled && isPollRefresh) {
+          setIsRefreshing(false);
+        }
+      }
+    };
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        try {
-          const latitude = position.coords.latitude;
-          const longitude = position.coords.longitude;
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
 
-          const [weatherResult, locationResult] = await Promise.allSettled([
-            fetch(
-              `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,is_day&temperature_unit=celsius&timezone=auto`,
-            ),
-            fetch(
-              `${backendUrl}/api/weather/location?latitude=${latitude}&longitude=${longitude}`,
-            ),
-          ]);
+        try {
+          await fetchWeather(latitude, longitude, true);
 
           if (cancelled) {
             return;
           }
 
-          if (weatherResult.status !== 'fulfilled' || !weatherResult.value.ok) {
-            throw new Error('Weather request failed.');
-          }
-
-          const weatherJson = (await weatherResult.value.json()) as CurrentWeatherResponse;
-          const current = weatherJson.current;
-
-          if (typeof current?.temperature_2m !== 'number' || typeof current.is_day !== 'number') {
-            throw new Error('Weather data was incomplete.');
-          }
-
-          const locationJson =
-            locationResult.status === 'fulfilled'
-              ? ((await locationResult.value.json().catch(() => null)) as { locationLabel?: string; place?: ReverseGeocodeResult | null } | null)
-              : null;
-
-          const nearestPlace = locationJson?.place ?? null;
-          const weatherVisual = getWeatherVisual(current.weather_code, current.is_day === 1);
-
-          setWeather({
-            temperature: current.temperature_2m,
-            humidity: typeof current.relative_humidity_2m === 'number' ? current.relative_humidity_2m : null,
-            description: weatherVisual.description,
-            locationLabel: locationJson?.locationLabel ?? formatLocationLabel(nearestPlace),
-            visual: weatherVisual.visual,
-          });
-          setWeatherStatus('ready');
+          pollInterval = setInterval(() => {
+            void fetchWeather(latitude, longitude, false, true).catch((error) => {
+              if (!cancelled) {
+                console.error('Failed to refresh weather data:', error);
+              }
+            });
+          }, 30000);
         } catch (error) {
           if (!cancelled) {
             console.error('Failed to load weather data:', error);
@@ -200,8 +238,11 @@ export function Topbar() {
 
     return () => {
       cancelled = true;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
     };
-  }, []);
+  }, [backendUrl]);
 
   return (
     <header className="h-16 bg-card border-b border-mist-light flex items-center px-4 md:px-8 gap-3 md:gap-4">
@@ -216,19 +257,21 @@ export function Topbar() {
 
       <div className="flex items-center gap-1.5 sm:gap-2 bg-card-alt border border-mist-light rounded-md px-2 py-1.5 sm:px-3.5 sm:py-1.5 font-body text-[10px] sm:text-[13px] text-text-body min-w-0 sm:min-w-[240px] justify-between sm:justify-start max-w-[calc(100vw-88px)] sm:max-w-none">
         {weatherStatus === 'loading' ? (
-          <>
+          <div className="flex min-w-0 items-center gap-1.5">
             <Loader2 size={13} className="text-text-muted sm:size-[14px] animate-spin" />
-            <span className="font-medium text-text-muted">Locating weather</span>
-          </>
+            <span className="truncate font-medium text-text-muted">
+              Loading live weather...
+            </span>
+          </div>
         ) : weatherStatus === 'error' || !weather ? (
-          <>
+          <div className="flex min-w-0 items-center gap-1.5">
             <MapPin size={13} className="text-text-muted sm:size-[14px]" />
-            <span className="font-medium text-text-muted">
+            <span className="truncate font-medium text-text-muted">
               {weatherNotice === 'denied'
                 ? 'Location blocked. Turn it on to see weather.'
                 : 'Enable location to see weather'}
             </span>
-          </>
+          </div>
         ) : (
           <div className="flex min-w-0 items-center gap-1 sm:gap-1.5">
             <div className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-sage/10 ring-1 ring-sage/15">
@@ -247,6 +290,17 @@ export function Topbar() {
             <ThermometerSun size={11} className="text-text-muted shrink-0 sm:size-[13px]" />
             <span className="truncate max-w-[64px] sm:max-w-[140px] text-text-muted">
               {weather.locationLabel}
+            </span>
+            <span className="w-px h-3 sm:h-4 bg-mist-light mx-0.5 sm:mx-1 shrink-0" />
+            <span className="flex shrink-0 items-center gap-1 rounded-full bg-sage/10 px-1.5 py-0.5 text-[9px] sm:text-[11px] text-text-muted">
+              {isRefreshing ? (
+                <Loader2 size={10} className="animate-spin text-sage sm:size-[11px]" />
+              ) : (
+                <span className="h-1.5 w-1.5 rounded-full bg-sage" />
+              )}
+              <span className="whitespace-nowrap">
+                {isRefreshing ? 'Refreshing' : '30s live'}
+              </span>
             </span>
           </div>
         )}
