@@ -12,6 +12,7 @@ import cors from 'cors';
 // loads the secret api keys from the .env file
 import dotenv from 'dotenv';
 import aiRoutes from './routes/ai.js';
+import weatherRoutes from './routes/weather.js';
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ app.use(express.json());
   the frontend will call http://localhost:3001/api/ai/insight
 */
 app.use('/api/ai', aiRoutes);
+app.use('/api/weather', weatherRoutes);
 
 // ========== HEALTH CHECK ==========
 /*
