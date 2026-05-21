@@ -104,7 +104,7 @@ These are safer to expose than raw-row reads because they return summaries inste
 
 Source:
 
-- [docs/dashboard-aggregate-rpcs.sql](/C:/Mycodes/MindScope/docs/dashboard-aggregate-rpcs.sql:1)
+- [data/sql/dashboard-aggregate-rpcs.sql](/C:/Mycodes/MindScope/data/sql/dashboard-aggregate-rpcs.sql:1)
 
 If RLS is enabled and these RPCs are meant to power a public dashboard, define them as `SECURITY DEFINER` functions and grant execute access explicitly. Otherwise the functions may run with the caller's row visibility and return zero rows to the frontend even though the table contains data.
 

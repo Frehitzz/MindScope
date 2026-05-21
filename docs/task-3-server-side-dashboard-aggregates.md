@@ -72,7 +72,7 @@ This fix moved the dashboard and insight pages away from raw-row fetching and on
 
 New file:
 
-- [docs/dashboard-aggregate-rpcs.sql](/C:/Mycodes/MindScope/docs/dashboard-aggregate-rpcs.sql:1)
+- [data/sql/dashboard-aggregate-rpcs.sql](/C:/Mycodes/MindScope/data/sql/dashboard-aggregate-rpcs.sql:1)
 
 This file defines four SQL functions:
 
@@ -175,7 +175,7 @@ The frontend code is now ready for server-side aggregate fetching, but the SQL f
 
 That means this file must be applied in Supabase SQL Editor:
 
-- [docs/dashboard-aggregate-rpcs.sql](/C:/Mycodes/MindScope/docs/dashboard-aggregate-rpcs.sql:1)
+- [data/sql/dashboard-aggregate-rpcs.sql](/C:/Mycodes/MindScope/data/sql/dashboard-aggregate-rpcs.sql:1)
 
 If those RPC functions are not created in the database, the dashboard and insight pages will not receive the new aggregate responses.
 
